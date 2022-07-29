@@ -5,8 +5,6 @@
 module Control.Applicative.Trans.FreeAp(
     ApT(..),
 
-    ViewApT, viewApT, fromViewApT,
-
     hoistApT, transApT,
     liftF, liftT, appendApT,
     
@@ -14,34 +12,19 @@ module Control.Applicative.Trans.FreeAp(
     fjoinApTLeft, fjoinApTRight
 ) where
 
-import Data.Functor.Day ( Day(..) )
-import Control.Applicative.Lift ( Lift(..) )
-import Data.Function ((&))
 import Control.Applicative
 
 import Data.Functor.Flip1
 import FFunctor ( FFunctor(..) )
 import FMonad ( FMonad(..) )
 
--- | > ApT f g ~ g + (g ⊗ f ⊗ 'ApT' f g)
+-- | > ApT f g ~ g + (g ⊗ f ⊗ ApT f g)
 --
 -- - @f + g@ means @'Data.Functor.Sum' f g@
 -- - @f ⊗ g@ means @'Day' f g@
 data ApT f g x =
       PureT (g x)
     | forall a b c. ApT (g a) (f b) (ApT f g c) (a -> b -> c -> x)
-
--- | > 'ViewApT' f g ~ g ⊗ 'Lift' (f ⊗ 'ApT' f g)
-type ViewApT f g = Day g (Lift (Day f (ApT f g)))
-
-viewApT :: ApT f g x -> ViewApT f g x
-viewApT (PureT gx) = Day gx (Pure ()) const
-viewApT (ApT ga fb rc x) = Day ga (Other (Day fb rc (\b c a -> x a b c))) (&)
-
-fromViewApT :: Functor g => ViewApT f g x -> ApT f g x
-fromViewApT (Day ga lifted g) = case lifted of
-    Pure b -> PureT $ (`g` b) <$> ga
-    Other (Day fb rc h) -> ApT ga fb rc (\a b c -> g a (h b c))
 
 instance Functor g => Functor (ApT f g) where
     fmap h (PureT gx) = PureT $ fmap h gx
@@ -115,6 +98,10 @@ fjoinApTRight = foldApT id liftT
 
 instance FFunctor (ApT f) where
     ffmap = hoistApT
+
+instance FMonad (ApT f) where
+    fpure = liftT
+    fjoin = fjoinApTLeft
 
 instance Functor g => FFunctor (Flip1 ApT g) where
     ffmap f2g = Flip1 . transApT f2g . unFlip1
