@@ -40,6 +40,9 @@ import Data.Functor.Day
 
 import FFunctor
 
+import Data.Functor.Day.Comonoid
+import Data.Functor.Day.Curried
+
 {-| Monad on 'Functor's
 
 FMonad laws:
@@ -238,3 +241,29 @@ instance (Applicative f) => FMonad (Day f) where
        trans1 dap :: Day (Day f f) g ~> Day f g
        assoc               :: Day f (Day f g) ~> Day (Day f f) g
     -}
+
+instance Comonoidal f => FMonad (Curried f) where
+    fpure :: Functor g => g a -> Curried f g a
+    fpure g = Curried $ \f -> copure f <$> g
+
+    fjoin :: Functor g => Curried f (Curried f g) a -> Curried f g a
+    fjoin ffg = Curried $ \f -> runCurried (uncurried ffg) (coapply f)
+
+-- @'uncurry' :: (a -> b -> c) -> (a,b) -> c@
+uncurried :: forall f g h c. (Functor f, Functor g) => Curried f (Curried g h) c -> Curried (Day f g) h c
+uncurried fgh = Curried $ \(Day f g op) -> uncurriedAux f g op
+  where
+    uncurriedAux :: forall a b r. f a -> g b -> (a -> b -> c -> r) -> h r
+    uncurriedAux fa gb abcr = h'
+      where
+        f' :: f (c -> b -> r)
+        f' = fmap (\a c b -> abcr a b c) fa
+
+        gh :: Curried g h (b -> r)
+        gh = runCurried fgh f'
+
+        g' :: g ((b -> r) -> r)
+        g' = fmap (\b -> ($ b)) gb
+
+        h' :: h r
+        h' = runCurried gh g'

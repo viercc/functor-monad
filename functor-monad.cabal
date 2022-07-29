@@ -15,7 +15,8 @@ library
                    
                    Control.Monad.Trans.Free.Extra,
                    Control.Applicative.Trans.FreeAp,
-                   Data.Functor.Flip1
+                   Data.Functor.Flip1,
+                   Data.Functor.Day.Comonoid
   build-depends:       base >= 4.10 && < 5
                      , transformers
                      , kan-extensions
