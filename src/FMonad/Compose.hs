@@ -99,7 +99,7 @@ deriving via (f :.: h :.: g)
   instance (Applicative f, Applicative g, Applicative h) => Applicative (ComposeBoth f g h)
 
 deriving via (f :.: h :.: g)
-  instance (Alternative f, Alternative g, Applicative h) => Alternative (ComposeBoth f g h)
+  instance (Alternative f, Applicative g, Applicative h) => Alternative (ComposeBoth f g h)
 
 instance (Functor f, Functor g) => FFunctor (ComposeBoth f g) where
   ffmap gh = ComposeBoth . fmap gh . getComposeBoth
