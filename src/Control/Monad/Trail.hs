@@ -27,11 +27,10 @@ instance (FFunctor mm) => Functor (Trail mm) where
       -- first f :: forall c. (a, c) -> (b, c)
 
 instance (FMonad mm) => Applicative (Trail mm) where
-    pure = return
+    pure a = Trail $ fpure (a, ())
     (<*>) = ap
 
 instance (FMonad mm) => Monad (Trail mm) where
-    return a = Trail $ fpure (a, ())
     ma >>= k = join_ (fmap k ma)
       where
         join_ = Trail . fjoin . ffmap (plug . first runTrail) . runTrail
