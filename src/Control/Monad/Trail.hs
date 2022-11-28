@@ -12,7 +12,7 @@
   TypeOperators,
   TupleSections
 #-}
-module Control.Monad.Trail(Trail(..)) where
+module Control.Monad.Trail(Trail(..), Trail'(..), Stepstone(..)) where
 
 import Control.Monad (ap)
 import Data.Bifunctor
@@ -145,5 +145,112 @@ join_ . fmap join_
    -- FMonad law
  = wrap . fjoin . fjoin . ffmap (ffmap pf . pf) . unwrap
  = join_ . join_
+
+-}
+
+
+data Stepstone s a r = Stepstone (s -> r) a
+    deriving (Functor)
+
+instance Bifunctor (Stepstone s) where
+  first f (Stepstone leg a) = Stepstone leg (f a)
+  second = fmap
+  bimap f g (Stepstone leg a) = Stepstone (g . leg) (f a)
+
+-- | @'Trail' mm ~ Trail' mm ()@
+newtype Trail' mm s a = Trail' { runTrail' :: mm (Stepstone s a) s }
+
+leap :: Functor f => Stepstone s (f s) x -> f x
+leap (Stepstone leg fs) = fmap leg fs
+
+pureStep :: a -> Stepstone s a s
+pureStep = Stepstone id
+
+instance (FFunctor mm) => Functor (Trail' mm s) where
+  fmap f = Trail' . ffmap (first f) . runTrail'
+
+instance (FMonad mm) => Applicative (Trail' mm s) where
+  pure a = Trail' $ fpure (pureStep a)
+  (<*>) = ap
+
+instance (FMonad mm) => Monad (Trail' mm s) where
+  ma >>= k = join_ (fmap k ma)
+      where
+        join_ = Trail' . fjoin . ffmap (leap . first runTrail') . runTrail'
+
+{-
+
+Examples:
+
+> Trail' mm s
+
+- @mm = ComposePost m@
+  
+  Trail' (ComposePost m) s a
+    ~ ComposePost (Stepstone s a) s
+    ~ m (Stepstone s a s)
+    ~ m (a, s -> s)
+    ~ WriterT (Endo s) m a
+
+- @mm = ComposePre m@
+
+  Trail' (ComposePre m) s a
+    ~ ComposePre m (Stepstone s a) s
+    ~ Stepstone s a (m s)
+    ~ (a, s -> m s)
+    ~ Writer (Endo (Kleisli m) s) a
+
+- @mm = Free@
+
+  Trail' Free s a
+    ~ Free (Stepstone s a) s
+    ~ μr. s + (s -> r, a)
+
+  data T s a = End s | Step (s -> T s a) a
+
+  pure a = Step a End
+  join (End s) = End s
+  join (Step f (End s)) = join (f s)
+  join (Step f (Step a g)) = Step (\s -> join (Step f (g s))) a
+
+- @mm = Sum f@
+
+  Trail' (Sum f) s a
+    ~ Sum f (Stepstone s a) s
+    ~ f s + (s -> s, a)
+  
+  data T f s a = End (f s) | Step (s -> s) a
+  pure a = Step id
+  join (End fs) = End fs
+  join (Step f (End fs)) = f <$> fs
+  join (Step f (Step g a)) = Step (f . g) a
+
+- @mm = Day f@
+
+  Trail' (Day f) s a
+    ~ Day f (Stepstone s a) s
+    ~ ∃x y. (f x, Stepstone s a y, x -> y -> s)
+    ~ ∃x y. (f x, s -> y, a, x -> y -> s)
+    ~ ∃x. (f x, a, x -> s -> s)
+    ~ (f (s -> s), a) 
+    ~ Writer (Ap f (Endo s)) a
+
+- @mm = FreeT' m@
+
+  Trail' (FreeT' m) s a
+    ~ FreeT (Stepstone s a) m s
+    ~ m (s + (s -> FreeT (Stepstone s a) m s, a))
+
+  newtype T m s a = T { runT :: m (Either s (s -> T m s a, a)) }
+
+  inaction s = T $ pure (Left s)
+  pure a = T $ pure (Right (inaction, a))
+
+  join tt = T $ runT tt >>= \case
+    Left s -> pure $ Left s
+    Right (k, t) -> runT t >>= \case
+      Left s -> runT (join (k s))
+      Right (l, a) ->
+        let kl s = join $ T $ pure (Right (k, ))
 
 -}
