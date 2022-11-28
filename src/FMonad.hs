@@ -43,29 +43,33 @@ import FFunctor
 import Data.Functor.Day.Comonoid
 import Data.Functor.Day.Curried
 
-{-| Monad on 'Functor's
+{-| Monad on 'Functor's.
 
 FMonad laws:
 
 [fpure is natural in g]
 
-    ∀(n :: g ~> h). ffmap n . fpure = fpure . n
+    For all @Functor g@, @Functor h@, and @n :: g ~> h@,
+
+    > ∀(n :: g ~> h). ffmap n . fpure = fpure . n
 
 [fjoin is natural in g]
 
-    ∀(n :: g ~> h). ffmap n . fjoin = fjoin . ffmap (ffmap n)
+    For all @Functor g@, @Functor h@, and @n :: g ~> h@,
+    
+    > ffmap n . fjoin = fjoin . ffmap (ffmap n)
 
 [Left unit]
 
-    fjoin . fpure = id
+    > fjoin . fpure = id
 
 [Right unit]
 
-    fjoin . fmap fpure = id
+    > fjoin . fmap fpure = id
 
 [Associativity]
 
-    fjoin . fjoin = fjoin . ffmap fjoin
+    > fjoin . fjoin = fjoin . ffmap fjoin
 
 -}
 class FFunctor ff => FMonad ff where

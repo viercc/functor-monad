@@ -7,21 +7,6 @@
   
   StandaloneKindSignatures
 #-}
-{- |
-
-This is not possible: @'Control.Monad.Trans.Cont.ContT' r m@ uses @m@ in both covariant
-and contravariant positions.
-> instance FFunctor (ContT r) where
-
-Ideally this instance should have existed, but a historical quirk prevent it to exist:
-> instance Functor f => FFunctor (FreeT f)
-Because, 'Control.Monad.Free.Trans.FreeT' defines its @Functor@ instance as
-> instance (Functor f, Monad m)   => Functor (FreeT f m)
-But beging @FFunctor (FreeT f)@ require it to be broader, more accurate constraint below.
-> instance (Functor f, Functor m) => Functor (FreeT f m)
-@Functor@ was not a superclass of @Monad@ back when @FreeT@ is made.
-
--}
 module FFunctor(
   type (~>),
   FFunctor(..)
@@ -47,7 +32,8 @@ import qualified Control.Monad.Free.Church as FreeMChurch
 import qualified Control.Applicative.Free as FreeAp
 import qualified Control.Applicative.Free.Final as FreeApFinal
 
--- | Natural
+-- | Natural transformation arrow
+type (~>) :: (k -> Type) -> (k -> Type) -> Type
 type (~>) f g = forall x. f x -> g x
 
 {-| Endofunctors on the category of 'Functor's
@@ -55,6 +41,22 @@ type (~>) f g = forall x. f x -> g x
 FFunctor laws:
 >  ffmap id = id
 >  ffmap f . ffmap g = ffmap (f . g)
+
+==== Examples
+
+TODO
+
+==== @ContT@ is not an instance of @FFunctor@
+
+@'Control.Monad.Trans.Cont.ContT' r@ has the kind matching to @FFunctor@, that is, taking a type constructor
+@m :: Type -> Type@ and make @ContT r m :: Type -> Type@. But there can't be an instance @FFunctor (ContT r)@,
+because @ContT r m@ uses @m@ in both positive and negative positions.
+
+> newtype ContT r m a = ContT {
+>     runContT :: (a -> m r) -> m r
+>     --                ^       ^ positive position
+>     --                | negative position
+>   }
 
 -}
 

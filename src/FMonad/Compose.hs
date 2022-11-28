@@ -35,13 +35,13 @@ import FMonad
 -- | Just there for the symmetry of names
 type ComposePost = Compose
 
--- de-PolyKind-ing of Compose
+-- | Single-kinded type alias of Compose
 type (:.:) :: (Type -> Type) -> (Type -> Type) -> Type -> Type
 type (:.:) = Compose
 
 -- | Flipped-order Compose.
---   
--- @ComposePre f@ can be a 'FMonad' in the similar way 'ComposePost' is.
+-- 
+-- When @f@ is a @Monad@, @ComposePre f@ is a 'FMonad' in the similar way 'ComposePost' is.
 -- 
 -- The only difference is @ComposePre f@ composes @f@ to the right (_pre_compose)
 -- compared to @ComposePost f@ which composes to the left (_post_compose).
@@ -78,10 +78,8 @@ instance Monad f => FMonad (ComposePre f) where
 
 -- | Both-side composition of Monad.
 --   
--- @ComposeBoth f g@ can be a 'FMonad' in the similar way 'ComposePost' and 'ComposePre' is.
--- 
--- The only difference is @ComposeBoth f@ composes @f@ to the right (_pre_compose)
--- compared to @Compose f@ which composes to the left (_post_compose).
+-- If both @f@ and @g@ are instances of @Monad@, @ComposeBoth f g@ is a 'FMonad' in the similar way
+-- 'ComposePost' and 'ComposePre' is.
 type    ComposeBoth :: (k2 -> Type) -> (k0 -> k1) -> (k1 -> k2) -> k0 -> Type
 newtype ComposeBoth f g h a = ComposeBoth { getComposeBoth :: f (h (g a)) }
     deriving stock (Show, Read, Functor, Foldable)
