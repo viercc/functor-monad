@@ -39,12 +39,28 @@ type (~>) f g = forall x. f x -> g x
 {-| Endofunctors on the category of 'Functor's
 
 FFunctor laws:
->  ffmap id = id
->  ffmap f . ffmap g = ffmap (f . g)
+
+[Identity]
+
+    >  ffmap id = id
+
+[Composition]
+
+    >  ffmap f . ffmap g = ffmap (f . g)
 
 ==== Examples
 
-TODO
+@FFunctor@ instance of 'Sum' is defined as below:
+
+> data Sum f g a = InL (f a) | InR (g a)
+> 
+> instance (Functor f) => FFunctor (Sum f) where
+>     ffmap :: (Functor g, Functor h) => (g ~> h) -> (Sum f g x -> Sum f h x)
+>     ffmap gh fgx = case fgx of
+>         InL fx -> InL fx
+>         InR gx -> InR (gh gx)
+
+Which can be said  @Functor (Either a)@ but each component is a @Functor@.
 
 ==== @ContT@ is not an instance of @FFunctor@
 

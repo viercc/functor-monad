@@ -51,7 +51,7 @@ FMonad laws:
 
     For all @Functor g@, @Functor h@, and @n :: g ~> h@,
 
-    > ∀(n :: g ~> h). ffmap n . fpure = fpure . n
+    > ffmap n . fpure = fpure . n
 
 [fjoin is natural in g]
 
