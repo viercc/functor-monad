@@ -3,7 +3,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE InstanceSigs #-}
-module Data.Functor.Day.Comonoid(Comonoidal(..), erase1, erase2) where
+module Data.Functor.Day.Comonoid(Comonoid(..), erase1, erase2) where
 
 import Data.Functor.Day
 import Data.Functor.Sum
@@ -15,7 +15,7 @@ import Data.Functor.Sum
 -- > erase1 copure . coapply = id
 -- > erase2 copure . coapply = id
 -- > trans1 coapply . coapply = assoc . trans2 coapply . coapply 
-class Functor f => Comonoidal f where
+class Functor f => Comonoid f where
     copure :: f a -> a
     coapply :: f a -> Day f f a
 
@@ -36,7 +36,7 @@ transBi t u (Day f g op) = Day (t f) (u g) op
 interchange :: Day (Day f f') (Day g g') x -> Day (Day f g) (Day f' g') x
 interchange = disassoc . trans1 (assoc . trans2 swapped . disassoc) . assoc
 
-instance Comonoidal ((,) a) where
+instance Comonoid ((,) a) where
     copure :: forall x. (a,x) -> x
     copure = snd
 
@@ -47,7 +47,7 @@ instance Comonoidal ((,) a) where
     -- ~ a -> (a,a)
     coapply (a,x) = Day (a,()) (a,()) (\_ _ -> x)
 
-instance Monoid m => Comonoidal ((->) m) where
+instance Monoid m => Comonoid ((->) m) where
     copure :: forall x. (m -> x) -> x
     copure = ($ mempty)
 
@@ -57,13 +57,13 @@ instance Monoid m => Comonoidal ((->) m) where
     -- ~ m -> m -> m
     coapply f = Day id id (\x y -> f (x <> y))
 
-instance (Comonoidal f, Comonoidal g) => Comonoidal (Sum f g) where
+instance (Comonoid f, Comonoid g) => Comonoid (Sum f g) where
     copure (InL f) = copure f
     copure (InR g) = copure g
 
     coapply (InL f) = transBi InL InL (coapply f)
     coapply (InR g) = transBi InR InR (coapply g)
 
-instance (Comonoidal f, Comonoidal g) => Comonoidal (Day f g) where
+instance (Comonoid f, Comonoid g) => Comonoid (Day f g) where
     copure (Day f g op) = op (copure f) (copure g)
     coapply = interchange . transBi coapply coapply

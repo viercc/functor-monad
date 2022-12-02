@@ -246,7 +246,7 @@ instance (Applicative f) => FMonad (Day f) where
        assoc               :: Day f (Day f g) ~> Day (Day f f) g
     -}
 
-instance Comonoidal f => FMonad (Curried f) where
+instance Comonoid f => FMonad (Curried f) where
     fpure :: Functor g => g a -> Curried f g a
     fpure g = Curried $ \f -> copure f <$> g
 
