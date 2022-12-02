@@ -24,11 +24,12 @@ import Data.Functor.Sum
 import Data.Functor.Product
 import Data.Functor.Compose
 
+import Control.Comonad (Comonad(..), (=>=))
+
 import Control.Monad.Trans.Identity
 import Control.Monad.Trans.Reader
 import Control.Monad.Trans.Writer
 import Control.Monad.Trans.State
-
 import Control.Applicative.Lift
 
 import qualified Control.Monad.Free       as FreeM
@@ -36,6 +37,8 @@ import qualified Control.Monad.Free.Church as FreeMChurch
 import qualified Control.Applicative.Free as FreeAp
 import qualified Control.Applicative.Free.Final as FreeApFinal
 
+import Data.Functor.Kan.Ran
+import Data.Functor.Kan.Lan
 import Data.Functor.Day
 
 import FFunctor
@@ -230,6 +233,30 @@ instead of just being a monoid.
 >         joinGroup s ((x,s1),s2) = (x, s2 <> inv s <> s1)
 
 -}
+
+-- | @Ran m (Ran m f) ~ Ran ('Compose' m m) f@
+instance (Comonad m) => FMonad (Ran m) where
+    fpure :: forall f x. (Functor f)
+          => f x -> Ran m f x
+    --       f x -> (forall b. (x -> m b) -> f b)
+    fpure f = Ran $ \k -> fmap (extract . k) f
+
+    fjoin :: forall f x. (Functor f)
+          => Ran m (Ran m f) x -> Ran m f x
+    --       (forall b c. (x -> m b) -> (b -> m c) -> f c) -> (forall d. (x -> m d) -> f d)
+    fjoin rrf = Ran $ \k -> runRan (runRan rrf (duplicate . k)) id
+
+-- | @Lan m (Lan m f) ~ Lan ('Compose' m m) f@
+instance (Comonad m) => FMonad (Lan m) where
+    fpure :: forall f x. (Functor f)
+          => f x -> Lan m f x
+    --       f x -> exists b. (m x -> b, f b)
+    fpure f = Lan extract f
+
+    fjoin :: forall f x. (Functor f)
+          => Lan m (Lan m f) x -> Lan m f x
+    --       (exists b. (m x -> b, exists c. (m b -> c, f c)) -> exists d. (m x -> d, f d)
+    fjoin (Lan j1 (Lan j2 f)) = Lan (j2 =>= j1) f
 
 instance (Applicative f) => FMonad (Day f) where
     fpure :: g ~> Day f g

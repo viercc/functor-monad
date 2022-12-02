@@ -16,9 +16,11 @@ library
                    Control.Monad.Trans.Free.Extra,
                    Control.Applicative.Trans.FreeAp,
                    Data.Functor.Flip1,
+                   Data.Functor.Kan.Monad,
                    Data.Functor.Day.Comonoid
   build-depends:       base >= 4.10 && < 5
                      , transformers
+                     , comonad
                      , kan-extensions
                      , free
   ghc-options:       -Wall -Wcompat

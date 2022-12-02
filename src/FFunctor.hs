@@ -18,6 +18,8 @@ import Data.Functor.Sum
 import Data.Functor.Product
 import Data.Functor.Compose
 
+import Data.Functor.Kan.Ran
+import Data.Functor.Kan.Lan
 import Data.Functor.Day
 import Data.Functor.Day.Curried
 
@@ -116,6 +118,12 @@ instance FFunctor (WriterT m) where
 
 instance FFunctor (StateT s) where
     ffmap fg = StateT . fmap fg . runStateT
+
+instance FFunctor (Ran f) where
+    ffmap gh (Ran ran) = Ran (gh . ran)
+
+instance FFunctor (Lan f) where
+    ffmap gh (Lan e g) = Lan e (gh g)
 
 instance FFunctor (Day f) where
     ffmap = trans2
