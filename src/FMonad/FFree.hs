@@ -6,10 +6,16 @@
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE FlexibleInstances #-}
 module FMonad.FFree where
 
+import Data.Functor.Identity
+
 import FFunctor
+import FStrong
 import FMonad
+
+import Data.Functor.Day ( Day(..) )
 
 data FFree ff g x = FPure (g x) | FFree (ff (FFree ff g) x)
 
@@ -29,8 +35,10 @@ instance (FFunctor ff) => FMonad (FFree ff) where
     fjoin (FPure mx) = mx
     fjoin (FFree fmmx) = FFree (ffmap fjoin fmmx)
 
-liftF :: (FFunctor ff, Functor g) => ff g ~> FFree ff g
-liftF fgx = FFree (ffmap FPure fgx)
+instance (FStrong ff) => FStrong (FFree ff) where
+    fstrength (Day ffg h op) = case ffg of
+      FPure g -> FPure (Day g h op)
+      FFree ffr -> FFree (ffmap fstrength $ fstrength (Day ffr h op))
 
 iter :: forall ff g. (FFunctor ff, Functor g) => (ff g ~> g) -> FFree ff g ~> g
 iter step = go
@@ -48,3 +56,11 @@ foldFFree toMM = go
 
 retract :: (FMonad ff, Functor g) => FFree ff g ~> ff g
 retract = foldFFree id
+
+instance FStrong ff => Applicative (FFree ff Identity) where
+    pure = FPure . Identity
+    FPure (Identity x) <*> y = x <$> y
+    FFree ffr <*> y = FFree $ innerAp ffr y
+
+liftF :: (FFunctor ff, Functor g) => ff g ~> FFree ff g
+liftF fgx = FFree (ffmap FPure fgx)
