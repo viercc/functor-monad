@@ -234,28 +234,28 @@ instead of just being a monoid.
 
 -}
 
--- | @Ran m (Ran m f) ~ Ran ('Compose' m m) f@
-instance (Comonad m) => FMonad (Ran m) where
+-- | @Ran w (Ran w f) ~ Ran ('Compose' w w) f@
+instance (Comonad w) => FMonad (Ran w) where
     fpure :: forall f x. (Functor f)
-          => f x -> Ran m f x
-    --       f x -> (forall b. (x -> m b) -> f b)
+          => f x -> Ran w f x
+    --       f x -> (forall b. (x -> w b) -> f b)
     fpure f = Ran $ \k -> fmap (extract . k) f
 
     fjoin :: forall f x. (Functor f)
-          => Ran m (Ran m f) x -> Ran m f x
-    --       (forall b c. (x -> m b) -> (b -> m c) -> f c) -> (forall d. (x -> m d) -> f d)
+          => Ran w (Ran w f) x -> Ran w f x
+    --       (forall b c. (x -> w b) -> (b -> w c) -> f c) -> (forall d. (x -> w d) -> f d)
     fjoin rrf = Ran $ \k -> runRan (runRan rrf (duplicate . k)) id
 
--- | @Lan m (Lan m f) ~ Lan ('Compose' m m) f@
-instance (Comonad m) => FMonad (Lan m) where
+-- | @Lan w (Lan w f) ~ Lan ('Compose' w w) f@
+instance (Comonad w) => FMonad (Lan w) where
     fpure :: forall f x. (Functor f)
-          => f x -> Lan m f x
-    --       f x -> exists b. (m x -> b, f b)
+          => f x -> Lan w f x
+    --       f x -> exists b. (w b -> x, f b)
     fpure f = Lan extract f
 
     fjoin :: forall f x. (Functor f)
-          => Lan m (Lan m f) x -> Lan m f x
-    --       (exists b. (m x -> b, exists c. (m b -> c, f c)) -> exists d. (m x -> d, f d)
+          => Lan w (Lan w f) x -> Lan w f x
+    --       (exists b. (w b -> x, exists c. (w c -> b, f c)) -> exists d. (w d -> x, f d)
     fjoin (Lan j1 (Lan j2 f)) = Lan (j2 =>= j1) f
 
 instance (Applicative f) => FMonad (Day f) where
