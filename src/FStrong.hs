@@ -2,18 +2,20 @@
 {-# LANGUAGE TypeOperators #-}
 module FStrong where
 
+import Data.Coerce ( coerce )
+
 import Data.Functor.Day
 import Data.Functor.Day.Curried
 import Data.Functor.Compose
-
-import Data.Coerce ( coerce )
-
-import FFunctor
 
 import Control.Monad.Trans.Identity (IdentityT(..))
 import Control.Monad.Trans.Writer (WriterT(..))
 import Control.Monad.Trans.State (StateT(..))
 import Control.Monad.Trans.Reader (ReaderT(..))
+
+import FFunctor
+import FMonad.Compose
+import FFunctor.FCompose
 
 class FFunctor ff => FStrong ff where
     {-# MINIMAL fstrength | mapCurried #-}
@@ -48,6 +50,13 @@ instance Functor f => FStrong (Curried f) where
 instance Functor f => FStrong (Compose f) where
     fstrength (Day (Compose fg) h op) = Compose (fmap (\g -> Day g h op) fg)
 
+instance Functor f => FStrong (ComposePre f) where
+    fstrength (Day (ComposePre gf) h op) = ComposePre (Day gf h (\fa b -> fmap (flip op b) fa))
+
+instance (Functor f, Functor f') => FStrong (ComposeBoth f f') where
+    fstrength (Day (ComposeBoth fgf') h op) = ComposeBoth $
+        fmap (\gf' -> Day gf' h (\fa b -> fmap (flip op b) fa)) fgf'
+
 instance FStrong (ReaderT e) where
     fstrength (Day (ReaderT eg) h op) = ReaderT $ \e -> Day (eg e) h op
 
@@ -58,7 +67,5 @@ instance FStrong (StateT s) where
     -- StateT s = ReaderT s ∘ WriterT s = Compose ((->) s) ∘ WriterT s
     fstrength (Day (StateT sgs) h op) = StateT $ \s -> Day (sgs s) h (\(b,s') c -> (op b c, s'))
 
--- TODO: StateT generalizes
---
--- newtype FCompose ff gg f x = FCompose (ff (gg f) x)
--- instance (FStrong ff, FStrong gg) => FStrong (FCompose ff gg)
+instance (FStrong ff, FStrong gg) => FStrong (FCompose ff gg) where
+    fstrength = FCompose . ffmap fstrength . fstrength . coerce

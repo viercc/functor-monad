@@ -9,6 +9,7 @@
 #-}
 module FFunctor(
   type (~>),
+  FUNCTOR, FF,
   FFunctor(..)
 ) where
 
@@ -78,7 +79,13 @@ because @ContT r m@ uses @m@ in both positive and negative positions.
 
 -}
 
-type  FFunctor :: ((Type -> Type) -> (Type -> Type)) -> Constraint
+-- | The kind of a @Functor@
+type FUNCTOR = Type -> Type
+
+-- | The kind of a @FFunctor@.
+type FF = FUNCTOR -> FUNCTOR
+
+type  FFunctor :: FF -> Constraint
 class (forall g. Functor g => Functor (ff g)) => FFunctor ff where
     ffmap :: (Functor g, Functor h) => (g ~> h) -> (ff g x -> ff h x)
 
