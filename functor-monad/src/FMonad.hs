@@ -13,6 +13,7 @@
   TypeOperators,
   TupleSections
 #-}
+{-# LANGUAGE FlexibleInstances #-}
 module FMonad(
   type (~>),
   FFunctor(..),
@@ -36,15 +37,16 @@ import qualified Control.Monad.Free       as FreeM
 import qualified Control.Monad.Free.Church as FreeMChurch
 import qualified Control.Applicative.Free as FreeAp
 import qualified Control.Applicative.Free.Final as FreeApFinal
+import qualified Control.Applicative.Trans.FreeAp as FreeApT
 
 import Data.Functor.Kan.Ran
 import Data.Functor.Kan.Lan
 import Data.Functor.Day
+import Data.Functor.Day.Curried
+import Data.Functor.Day.Comonoid
 
 import FFunctor
-
-import Data.Functor.Day.Comonoid
-import Data.Functor.Day.Curried
+import Data.Functor.Flip1
 
 {-| Monad on 'Functor's.
 
@@ -298,3 +300,11 @@ uncurried fgh = Curried $ \(Day f g op) -> uncurriedAux f g op
 
         h' :: h r
         h' = runCurried gh g'
+
+instance FMonad (FreeApT.ApT f) where
+  fpure = FreeApT.liftT
+  fjoin = FreeApT.fjoinApTLeft
+
+instance Applicative g => FMonad (Flip1 FreeApT.ApT g) where
+    fpure = Flip1 . FreeApT.liftF
+    fjoin = Flip1 . FreeApT.foldApT unFlip1 FreeApT.liftT . unFlip1

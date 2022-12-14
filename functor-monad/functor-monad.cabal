@@ -17,7 +17,6 @@ library
                    Control.Monad.Trail,
                    
                    Control.Monad.Trans.Free.Extra,
-                   Control.Applicative.Trans.FreeAp,
                    Data.Functor.Flip1,
                    Data.Functor.Kan.Monad,
                    Data.Functor.Day.Comonoid
@@ -26,6 +25,7 @@ library
                      , comonad
                      , kan-extensions
                      , free
+                     , free-applicative-t
   ghc-options:       -Wall -Wcompat
                      -Wunused-packages -Wwarn=unused-packages
   default-language:  Haskell2010

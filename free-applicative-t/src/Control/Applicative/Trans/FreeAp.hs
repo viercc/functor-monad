@@ -14,10 +14,6 @@ module Control.Applicative.Trans.FreeAp(
 
 import Control.Applicative
 
-import Data.Functor.Flip1
-import FFunctor ( FFunctor(..) )
-import FMonad ( FMonad(..) )
-
 -- | > ApT f g ~ g + (g ⊗ f ⊗ ApT f g)
 --
 -- - @f + g@ means @'Data.Functor.Sum' f g@
@@ -95,17 +91,3 @@ fjoinApTLeft = go
 
 fjoinApTRight :: Applicative g => ApT (ApT f g) g x -> ApT f g x
 fjoinApTRight = foldApT id liftT
-
-instance FFunctor (ApT f) where
-    ffmap = hoistApT
-
-instance FMonad (ApT f) where
-    fpure = liftT
-    fjoin = fjoinApTLeft
-
-instance Functor g => FFunctor (Flip1 ApT g) where
-    ffmap f2g = Flip1 . transApT f2g . unFlip1
-
-instance Applicative g => FMonad (Flip1 ApT g) where
-    fpure = Flip1 . liftF
-    fjoin = Flip1 . foldApT unFlip1 liftT . unFlip1
