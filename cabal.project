@@ -1,0 +1,3 @@
+packages:
+    ./functor-monad/*.cabal
+    ./free-applicative-t/*.cabal

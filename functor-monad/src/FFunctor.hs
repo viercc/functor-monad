@@ -7,6 +7,7 @@
   
   StandaloneKindSignatures
 #-}
+{-# LANGUAGE FlexibleInstances #-}
 module FFunctor(
   type (~>),
   FUNCTOR, FF,
@@ -34,6 +35,9 @@ import qualified Control.Monad.Free       as FreeM
 import qualified Control.Monad.Free.Church as FreeMChurch
 import qualified Control.Applicative.Free as FreeAp
 import qualified Control.Applicative.Free.Final as FreeApFinal
+import qualified Control.Applicative.Trans.FreeAp as FreeApT
+
+import Data.Functor.Flip1
 
 -- | Natural transformation arrow
 type (~>) :: (k -> Type) -> (k -> Type) -> Type
@@ -137,3 +141,9 @@ instance FFunctor (Day f) where
 
 instance Functor f => FFunctor (Curried f) where
     ffmap gh (Curried t) = Curried (gh . t)
+
+instance FFunctor (FreeApT.ApT f) where
+  ffmap = FreeApT.hoistApT
+
+instance Functor g => FFunctor (Flip1 FreeApT.ApT g) where
+    ffmap f2g = Flip1 . FreeApT.transApT f2g . unFlip1
