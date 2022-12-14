@@ -1,0 +1,2 @@
+packages:
+    ./functor-monad/functor-monad.cabal
