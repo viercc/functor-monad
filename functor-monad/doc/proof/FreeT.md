@@ -1,105 +1,16 @@
-# On `FreeT' m` being lawful `FMonad`
+|Status|Confirmed ver|
+|---|---|
+|WIP|0.1.0.0|
+
+# `FreeT f` and `FreeT' m` are two lawful `FMonad`
 
 ## Definitions
 
-### FFunctor and FMonad
+### FreeT and FreeT'
 
-```haskell
-type (~>) f g = forall a. f a -> g a
-
-{-| Functor on 'Functor's
-
-FFunctor laws:
->  ffmap id = id
->  ffmap f . ffmap g = ffmap (f . g)
-
--}
-class (forall g. Functor g => Functor (ff g)) => FFunctor ff where
-    ffmap :: (Functor g, Functor h) => (g ~> h) -> (ff g ~> ff h)
-```
-
-```haskell
-{-| Monad on 'Functor's
-
-FMonad laws:
-
-[fpure is natural in g]
-
-    ∀(n :: g ~> h). ffmap n . fpure = fpure . n
-
-[fjoin is natural in g]
-
-    ∀(n :: g ~> h). ffmap n . fjoin = fjoin . ffmap (ffmap n)
-
-[Left unit]
-
-    fjoin . fpure = id
-
-[Right unit]
-
-    fjoin . fmap fpure = id
-
-[Associativity]
-
-    fjoin . fjoin = fjoin . ffmap fjoin
-
--}
-class FFunctor ff => FMonad ff where
-    fpure :: (Functor g) => g ~> ff g
-    fjoin :: (Functor g) => ff (ff g) ~> ff g
-```
-
-### FreeT'
-
-[FreeT'](./src/FMonad/FreeT.hs), cf. [FreeT](https://hackage.haskell.org/package/free-5.1.3/docs/Control-Monad-Trans-Free.html#t:FreeT)
-
-```haskell
--- FreeT' is (Flip FreeT)
-newtype FreeT f m b = FreeT { runFreeT :: m (FreeF f b (FreeT f m b)) }
-
-newtype FreeT' m f b = FreeT' { unFreeT' :: FreeT f m b }
-    deriving (Applicative, Monad) via (FreeT f m)
-
--- Sadly, Functor (FreeT m f) uses liftM instead of fmap,
--- meaning (Monad m, Functor f) => Functor (FreeT f m).
--- Maybe that was for backward compatibility,
--- but I want (Functor m, Functor f) => ...
-fmapFreeT_ :: (Functor f, Functor m) => (a -> b) -> FreeT f m a -> FreeT f m b
-fmapFreeT_ f = FreeT . fmap (bimap f (fmapFreeT_ f)) . runFreeT
-
-ffmapFreeF :: forall f g a. (f ~> g) -> FreeF f a ~> FreeF g a
-ffmapFreeF _  (Pure a)  = Pure a
-ffmapFreeF fg (Free fb) = Free (fg fb)
-
--- Same!
-transFreeT_ :: forall f g m. (Functor g, Functor m) => (f ~> g) -> FreeT f m ~> FreeT g m
-transFreeT_ fg =
-  let go = FreeT . fmap (fmap go . ffmapFreeF fg) . runFreeT in go
-
-instance (Functor m, Functor f) => Functor (FreeT' m f) where
-    fmap f (FreeT' mx) = FreeT' (fmapFreeT_ f mx)
-
-instance Functor m => FFunctor (FreeT' m) where
-    ffmap f = FreeT' . transFreeT_ f . unFreeT'
-
-instance Monad m => FMonad (FreeT' m) where
-    fpure :: forall g. Functor g => g ~> FreeT' m g
-    fpure gx = FreeT' (liftF gx)
-    
-    fjoin :: forall g. Functor g => FreeT' m (FreeT' m g) ~> FreeT' m g
-    fjoin =  FreeT' . fjoin_ . transFreeT_ unFreeT' . unFreeT'
-      where
-        fjoin_ :: FreeT (FreeT g m) m ~> FreeT g m
-        fjoin_ = retractT
-
--- Copy-pasted from "free"
-retractT :: (MonadTrans t, Monad (t m), Monad m) => FreeT (t m) m a -> t m a
-retractT (FreeT m) = do
-  val <- lift m
-  case val of
-    Pure x -> return x
-    Free y -> y >>= retractT
-```
+* [FreeT'](./src/FMonad/FreeT.hs)
+* [Control.Monad.Trans.Free.Extra](./src/Control/Monad/Trans/Free/Extra.hs)
+* https://hackage.haskell.org/package/free-5.1.3/docs/Control-Monad-Trans-Free.html#t:FreeT
 
 ### Monad morphism
 
@@ -121,7 +32,7 @@ inl = liftF
 inl gx = FreeT . return @m . Free . fmap (return @(FreeT m f)) $ mx
 ```
 
-## Proof 
+## Proof (FreeT')
 
 ### Universal Property
 
@@ -504,3 +415,7 @@ Using this notation, a counterexample for they are not inverses look like this:
   m ∘ (1m ∘ n ∘ 1m) ∘ 1m ∘ (1m ∘ 1n ∘ f ∘ 1n ∘ 1m) ∘ 1m ∘ (1m ∘ n ∘ 1m) ∘ m
 = m ∘ (n) ∘ 1m ∘ (1n ∘ f ∘ 1n) ∘ 1m ∘ (n) ∘ m
 ```
+
+## Proof (FreeT)
+
+TODO
