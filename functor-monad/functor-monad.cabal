@@ -6,7 +6,7 @@ license-file:        LICENSE
 author:              Koji Miyazato
 copyright:           2018-2022 Koji Miyazato
 build-type:          Simple
-extra-source-files:  README.md
+extra-doc-files:     CHANGELOG.md, README.md
 
 library
   hs-source-dirs:  src

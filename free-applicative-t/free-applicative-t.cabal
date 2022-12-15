@@ -8,11 +8,10 @@ license:            GPL-3.0-only
 license-file:       LICENSE
 author:             Koji Miyazato
 maintainer:         viercc@gmail.com
--- copyright:
+copyright:          2022 Koji Miyazato
 category:           Control
 build-type:         Simple
-extra-doc-files:    CHANGELOG.md
--- extra-source-files:
+extra-doc-files:    CHANGELOG.md, README.md
 tested-with: GHC ==9.0.2, GHC ==9.2.5, GHC ==9.4.3
 
 common warnings
@@ -28,8 +27,6 @@ library
 test-suite free-applicative-t-test
     import:           warnings
     default-language: Haskell2010
-    -- other-modules:
-    -- other-extensions:
     type:             exitcode-stdio-1.0
     hs-source-dirs:   test
     main-is:          Main.hs
