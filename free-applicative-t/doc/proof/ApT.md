@@ -295,27 +295,27 @@ The above set is equivalent to the original laws, assuming the following propert
        ≡ u <*> (v <*> w)
       ```
 
-  * Case `v = ApT y ga fb rc`
+    * Case `v = ApT y ga fb rc`
 
-    ```haskell
-    u <*> (v <*> w)
-      ≡ PureT gu <*> (ApT y ga fb rc <*> w)
-      -- Definition of <*>
-      ≡ PureT gu <*> ApT (\a b ~(c,z) -> y a b c z) ga fb (rc `prod` w)
-      -- Definition of <*>
-      ≡ ApT (\~(x,a) b ~(c,z) -> x (y a b c z)) (gu `prod` ga) fb (rc `prod` w)
-    
-    (.) <$> u <*> v <*> w
-      ≡ (.) <$> PureT gu <*> ApT y ga fb rc <*> w
-      -- Definition of fmap and <*>
-      ≡ ApT (\~(x,a) b c -> x (y a b c)) (fmap (first (.)) (gu `prod` ga) fb rc <*> w
-      -- Move fmap
-      ≡ ApT (\~(x,a) b c -> x . y a b c) (gu `prod` ga) fb rc <*> w
-      -- Definition of <*>
-      ≡ ApT (\~(x,a) b ~(c,z) -> (x . y a b c) z) (gu `prod` ga) fb (rc `prod` w)
-      ≡ ApT (\~(x,a) b ~(c,z) -> x (y a b c z)) (gu `prod` ga) fb (rc `prod` w)
-      ≡ u <*> (v <*> w)
-    ```
+        ```haskell
+        u <*> (v <*> w)
+        ≡ PureT gu <*> (ApT y ga fb rc <*> w)
+        -- Definition of <*>
+        ≡ PureT gu <*> ApT (\a b ~(c,z) -> y a b c z) ga fb (rc `prod` w)
+        -- Definition of <*>
+        ≡ ApT (\~(x,a) b ~(c,z) -> x (y a b c z)) (gu `prod` ga) fb (rc `prod` w)
+        
+        (.) <$> u <*> v <*> w
+        ≡ (.) <$> PureT gu <*> ApT y ga fb rc <*> w
+        -- Definition of fmap and <*>
+        ≡ ApT (\~(x,a) b c -> x (y a b c)) (fmap (first (.)) (gu `prod` ga) fb rc <*> w
+        -- Move fmap
+        ≡ ApT (\~(x,a) b c -> x . y a b c) (gu `prod` ga) fb rc <*> w
+        -- Definition of <*>
+        ≡ ApT (\~(x,a) b ~(c,z) -> (x . y a b c) z) (gu `prod` ga) fb (rc `prod` w)
+        ≡ ApT (\~(x,a) b ~(c,z) -> x (y a b c z)) (gu `prod` ga) fb (rc `prod` w)
+        ≡ u <*> (v <*> w)
+        ```
 
 ## `liftT` is an applicative transformation
 ## Universal properties of `ApT`
