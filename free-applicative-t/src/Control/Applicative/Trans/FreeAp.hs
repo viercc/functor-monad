@@ -8,7 +8,7 @@ module Control.Applicative.Trans.FreeAp(
     
     toFree, fromFree,
     
-    hoistApT, transApT,
+    transApT, hoistApT,
     liftF, liftT, appendApT,
     
     foldApT, foldApT_,
@@ -24,12 +24,12 @@ import qualified Control.Applicative.Free as Free
 --
 --   ==== \"Applicative transformer\"
 --   
---   Being \"applicative transformer\" means these two things:
+--   Being an \"applicative transformer\" means these two things:
 --
 --   * Applying @ApT f@ to an applicative functor @g@ constructs a new applicative
 --     functor @ApT f g@.
 --   
---   * Using 'liftT', You can lift an action of @g@ to the action of @ApT f g@.
+--   * Using 'liftT', you can lift an action of @g@ to the action of @ApT f g@.
 --
 --       > liftT :: g x -> ApT f g x
 --       
@@ -41,23 +41,24 @@ import qualified Control.Applicative.Free as Free
 --   
 --   ==== \"Free\" applicative transformer
 --
---   It's the \"free\" applicative transformer. It means @ApT f g@ is the special
+--   It's the \"free\" applicative transformer. It means @ApT f g@ is the special, the most universal
 --   one among various applicative functors which can lift @f@ and @g@ into them.
 -- 
---   * @ApT f g@ is an applicative transformer on @g@, by the applicative transformation @liftT@ lift @g@
---     to @ApT f g@.
---
---   * In addition to @g@, @ApT f g@ has a way to lift any value of @f a@ into an action of @ApT f g a@.
+--   * @ApT f g@ has a way to lift any value of @f a@ into an action of @ApT f g a@.
 -- 
 --       > liftF :: (Applicative g) => f a -> ApT f g a
--- 
---   * Suppose another applicative functor @h@ is capable of lifting both @g a@ and @f a@ to @h a@.
+--     
+--       Because @ApT f g@ is also an applicative transformer on @g@, it has a way to lift @g@ too.
 --
---       > gh :: g a -> h a
+--       > liftT :: g x -> ApT f g x
+-- 
+--   * Suppose another applicative functor @h@ is capable of lifting both @f@ and @g@ to @h@.
+--
 --       > fh :: f a -> h a
+--       > gh :: g a -> h a
 --
 --       @ApT f g@ is the universal applicative among them. There's 'foldApT' to construct
---       the applicative transformation from @ApT f g@ to @h@, preserving how to lift @f@ and @g@.
+--       the applicative transformation from @ApT f g@ to @h@, without losing how to lift @f@ and @g@.
 --
 --       > foldApT :: forall f g h x. Applicative h => (forall a. f a -> h a) -> (forall a. g a -> h a) -> ApT f g x -> h x
 --       >
@@ -66,7 +67,7 @@ import qualified Control.Applicative.Free as Free
 --       > foldApT fh gh . liftF = fh
 --       > foldApT fh gh . liftT = gh
 --
---   * @ApT f g@ contains no extra data that are not from lifting @f a@ and/or @g a@ then combining them together
+--   * @ApT f g@ contains no extra data that are not from lifting @f@ and/or @g@ then combining them together
 --     by @Applicative@ operation '<*>'.
 --
 --       It means any applicative transformation @run :: forall a. ApT f g a -> h a@ which satisfies @run . liftF = fh@ and @run . liftT = gh@
@@ -108,12 +109,14 @@ fromFree :: Free.Ap f a -> ApT f Identity a
 fromFree (Free.Pure a) = PureT (Identity a)
 fromFree (Free.Ap fb rest) = ApT flip (Identity id) fb (fromFree rest)
 
+-- | Lift an applicative transformation @(forall a. g a -> g' a)@ to
+--   an applicative transformation @(forall b. ApT f g b -> ApT f g' b)@.
 hoistApT :: (forall a. g a -> g' a) -> ApT f g b -> ApT f g' b
 hoistApT phi (PureT gx) = PureT (phi gx)
 hoistApT phi (ApT x ga fb rc) = ApT x (phi ga) fb (hoistApT phi rc)
 
--- | Lift any natural transfomation between @f@ and @f'@ to
---   an applicative homomorphism between @ApT f g, ApT f' g@
+-- | Lift any natural transformation @(forall a. f a -> f' a)@ to
+--   an applicative transformation @(forall b. ApT f g b -> ApT f' g b)@.
 transApT :: (forall a. f a -> f' a) -> ApT f g b -> ApT f' g b
 transApT _ (PureT gx) = PureT gx
 transApT phi (ApT x ga fb rc) = ApT x ga (phi fb) (transApT phi rc)
@@ -134,12 +137,12 @@ appendApT x prefix fb postfix = case prefix of
     PureT ga -> ApT x ga fb postfix
     ApT a ga' fb' prefix' -> ApT  (\a' b' ~(c',b,c) -> x (a a' b' c') b c) ga' fb' (appendApT (,,) prefix' fb postfix)
 
--- | Interpret the applicative @ApT f g@ into an applicative @h@.
+-- | Interpret @ApT f g@ into an applicative @h@.
 --   
---   When @g@ is @Applicative@ and @gh :: forall a. g a -> h a@ is an applicative transformation,
---   @'foldApT' fh gh@ is also an applicative transformation.
+--   When @g@ is an @Applicative@ and @gh :: forall a. g a -> h a@ is an applicative transformation,
+--   @'foldApT' fh gh@ is an applicative transformation too.
 --
---   @foldApT@ satisfy the following equations with 'liftF' and 'liftT':
+--   @foldApT@ satisfy the following equations with 'liftF' and 'liftT'.
 --
 --   > foldApT fh gh . liftF = fh
 --   > foldApT fh gh . liftT = gh
@@ -151,9 +154,9 @@ foldApT f2h g2h = go
     go (ApT x ga fb rc) = liftA3 x (g2h ga) (f2h fb) (go rc)
 
 -- | Perform a monoidal analysis over @ApT f g@ value.
---   This is equivalent to @foldApT@ using @'Control.Applicative.Const' m@ applicative.
 --
---   It actually doesn't require @m@ to be 'Monoid', but only 'Semigroup'.
+--   This is equivalent to use @foldApT@ with the applicative @'Control.Applicative.Const' m@,
+--   except @m@ doesn't need to be a @Monoid@ but just a @Semigroup@.
 foldApT_ :: forall f g m x. Semigroup m => (forall a. f a -> m) -> (forall a. g a -> m) -> ApT f g x -> m
 foldApT_ f2m g2m = go
   where
@@ -161,7 +164,7 @@ foldApT_ f2m g2m = go
     go (PureT gx) = g2m gx
     go (ApT _ ga fb rc) = g2m ga <> f2m fb <> go rc
 
--- | Collapsing left-nested @ApT@.
+-- | Collapsing @ApT@ nested left-to-right.
 fjoinApTLeft :: forall f g x. ApT f (ApT f g) x -> ApT f g x
 fjoinApTLeft = go
   where
@@ -169,6 +172,6 @@ fjoinApTLeft = go
     go (PureT inner) = inner
     go (ApT y inner fb rest) = appendApT y inner fb (go rest)
 
--- | Collapsing right-nested @ApT@.
+-- | Collapsing @ApT@ nested right-to-left.
 fjoinApTRight :: Applicative g => ApT (ApT f g) g x -> ApT f g x
 fjoinApTRight = foldApT id liftT
