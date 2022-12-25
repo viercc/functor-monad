@@ -6,7 +6,7 @@
 module Control.Applicative.Trans.FreeAp(
     ApT(..),
     
-    toFree,
+    toFree, fromFree,
     
     hoistApT, transApT,
     liftF, liftT, appendApT,
@@ -104,8 +104,10 @@ toFreeAux :: (a -> b) -> ApT f Identity a -> Free.Ap f b
 toFreeAux k (PureT (Identity a)) = Free.Pure (k a)
 toFreeAux k (ApT x (Identity a) fb rc) = Free.Ap fb (toFreeAux (\c b -> k (x a b c)) rc)
 
--- | Lift an applicative homomorphism between @g@ and @g'@ to
---   an applicative homomorphism between @ApT f g@ and @ApT f g'@
+fromFree :: Free.Ap f a -> ApT f Identity a
+fromFree (Free.Pure a) = PureT (Identity a)
+fromFree (Free.Ap fb rest) = ApT flip (Identity id) fb (fromFree rest)
+
 hoistApT :: (forall a. g a -> g' a) -> ApT f g b -> ApT f g' b
 hoistApT phi (PureT gx) = PureT (phi gx)
 hoistApT phi (ApT x ga fb rc) = ApT x (phi ga) fb (hoistApT phi rc)
