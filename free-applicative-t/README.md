@@ -21,7 +21,5 @@ runApT :: (Applicative h, Functor g) => (forall a. f a -> h a) -> (forall a. g (
 foldApT :: forall f g h b. Applicative h => (forall a. f a -> h a) -> (forall a. g a -> h a) -> ApT f g b -> h b
 ```
 
-The name `ApT` and some naming choices for functions are borrowed from the one in "free" package, though.
-
 Although I (the author) believe this package provides the free applicative transformer under the most natural interpretation of "free" and "applicative transformer," the term "applicative transformer" has never been defined clearly and thus "free" thing of the "applicative transformer" hasn't been too.
 Because of this ambiguity, I want it to be another take on the Free Applicative Transformer, rather than the patch to the "free" package replacing the current `Control.Applicative.Trans.Free`.
