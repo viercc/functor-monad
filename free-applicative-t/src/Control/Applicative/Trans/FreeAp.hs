@@ -20,7 +20,7 @@ import Data.Functor.Identity
 import qualified Control.Applicative.Free as Free
 
 -- | @'ApT' f@ is a \"free\" \"applicative transformer\", in the same sense
---   @FreeT@ from "free" package is a free monad transformer.
+--   @'Control.Monad.Trans.Free.FreeT' f@ is a free monad transformer.
 --
 --   ==== \"Applicative transformer\"
 --   
@@ -41,30 +41,36 @@ import qualified Control.Applicative.Free as Free
 --   
 --   ==== \"Free\" applicative transformer
 --
---   It's \"free\" applicative transformer. It means @ApT f g@ is the special
+--   It's the \"free\" applicative transformer. It means @ApT f g@ is the special
 --   one among various applicative functors which can lift @f@ and @g@ into them.
---   
---   * @ApT f g@ has a way to lift any value of @f a@ into an action of @ApT f g a@.
---       
---       > liftF :: (Applicative g) => f a -> ApT f g a
---   
---   * Suppose another applicative functor @H@ is capable of lifting both @g a@ and @f a@ to @H a@.
+-- 
+--   * @ApT f g@ is an applicative transformer on @g@, by the applicative transformation @liftT@ lift @g@
+--     to @ApT f g@.
 --
---       > liftT' :: g a -> H a
---       > liftF' :: f a -> H a
+--   * In addition to @g@, @ApT f g@ has a way to lift any value of @f a@ into an action of @ApT f g a@.
+-- 
+--       > liftF :: (Applicative g) => f a -> ApT f g a
+-- 
+--   * Suppose another applicative functor @h@ is capable of lifting both @g a@ and @f a@ to @h a@.
+--
+--       > gh :: g a -> h a
+--       > fh :: f a -> h a
 --
 --       @ApT f g@ is the universal applicative among them. There's 'foldApT' to construct
---       the applicative transformation from @ApT f g@ to @X@, preserving how to lift @f@ and @g@.
+--       the applicative transformation from @ApT f g@ to @h@, preserving how to lift @f@ and @g@.
 --
 --       > foldApT :: forall f g h x. Applicative h => (forall a. f a -> h a) -> (forall a. g a -> h a) -> ApT f g x -> h x
 --       >
---       > foldApT liftF' liftT' :: forall x. ApT f g x -> H x
+--       > foldApT fh gh :: forall x. ApT f g x -> h x
 --       >
---       > foldApT liftF' liftT' . liftF = liftF'
---       > foldApT liftF' liftT' . liftT = liftT'
---       
---       Conversely, @ApT f g@ contains no data that are not from @f a@ and @g a@.
---       It means any applicative transformation from @ApT f g@ will be written using @foldApT@.
+--       > foldApT fh gh . liftF = fh
+--       > foldApT fh gh . liftT = gh
+--
+--   * @ApT f g@ contains no extra data that are not from lifting @f a@ and/or @g a@ then combining them together
+--     by @Applicative@ operation '<*>'.
+--
+--       It means any applicative transformation @run :: forall a. ApT f g a -> h a@ which satisfies @run . liftF = fh@ and @run . liftT = gh@
+--       is equivalent to @foldApT fh gh@.
 data ApT f g x =
       PureT (g x)
     | forall a b c. ApT (a -> b -> c -> x) (g a) (f b) (ApT f g c)
@@ -118,8 +124,9 @@ liftT = PureT
 liftF :: Applicative g => f x -> ApT f g x
 liftF fx = ApT (\_ x _ -> x) (pure ()) fx (pure ())
 
--- | Equivalent to @'appendApT' x prefix fb postfix == x <$> prefix <*> liftF fb <*> postfix@,
---   but is faster and doesn't require @Applicative g@.
+-- | Equivalent to the following definition, but is faster and doesn't require @Applicative g@ constraint.
+--   
+--   @appendApT x prefix fb postfix = x \<$\> prefix \<*\> liftF fb \<*\> postfix@
 appendApT :: (a -> b -> c -> x) -> ApT f g a -> f b -> ApT f g c -> ApT f g x
 appendApT x prefix fb postfix = case prefix of
     PureT ga -> ApT x ga fb postfix

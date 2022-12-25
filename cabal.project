@@ -1,3 +1,7 @@
 packages:
     ./functor-monad/*.cabal
     ./free-applicative-t/*.cabal
+
+package *
+    documentation: True
+    haddock-html-location: http://hackage.haskell.org/packages/archive/$pkg/latest/doc/html
