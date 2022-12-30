@@ -2,6 +2,11 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE DerivingVia #-}
 -- | 'Applicative' functor transformers, like monad transformers, for free.
 module Control.Applicative.Trans.FreeAp(
     ApT(..),
@@ -12,12 +17,21 @@ module Control.Applicative.Trans.FreeAp(
     liftF, liftT, appendApT,
     
     foldApT, foldApT_,
-    fjoinApTLeft, fjoinApTRight
+    fjoinApTLeft, fjoinApTRight,
+    
+    ApIx(..), fromTableAndIx
 ) where
 
+import Data.Traversable (mapAccumL)
+import Data.Foldable (toList)
 import Control.Applicative
 import Data.Functor.Identity
 import qualified Control.Applicative.Free as Free
+
+import GHC.Stack (HasCallStack)
+import qualified GHC.Arr as Arr
+
+import Data.Functor.Classes
 
 -- | @'ApT' f@ is a \"free\" \"applicative transformer\", in the same sense
 --   @'Control.Monad.Trans.Free.FreeT' f@ is a free monad transformer.
@@ -175,3 +189,147 @@ fjoinApTLeft = go
 -- | Collapsing @ApT@ nested right-to-left.
 fjoinApTRight :: Applicative g => ApT (ApT f g) g x -> ApT f g x
 fjoinApTRight = foldApT id liftT
+
+-------------
+instance (Foldable f, Foldable g) => Foldable (ApT f g) where
+  foldMap f (PureT gx) = foldMap f gx
+  foldMap f (ApT x ga fb rc) =
+    foldFor ga $ \a ->
+      foldFor fb $ \b ->
+        foldFor rc $ \c -> f (x a b c)
+  length = go 1
+    where
+      go :: forall any. Int -> ApT f g any -> Int
+      go 0 _ = 0
+      go n (PureT gx) = n * length gx
+      go n (ApT _ f g r) = go (length f * length g * n) r
+  null (PureT gx) = null gx
+  null (ApT _ ga fb rc) = null ga || null fb || null rc
+
+foldFor :: (Foldable f, Monoid m) => f a -> (a -> m) -> m
+foldFor = flip foldMap
+
+extractElems :: (Traversable f) => f a -> ([a], f Int)
+extractElems fa = (toList fa, snd (mapAccumL (\n _ -> n `seq` (n+1, n)) 0 fa))
+
+data ApIx f g where
+  PureIx :: g Int -> ApIx f g
+  ApIx :: g Int -> f Int -> ApIx f g -> ApIx f g
+
+instance (Show (f Int), Show (g Int)) => Show (ApIx f g) where
+  showsPrec p (PureIx gi) = showParen (p > 10) $ ("PureIx " ++) . showsPrec 11 gi
+  showsPrec p (ApIx gi fj r) = showParen (p > 10) $ ("ApIx " ++) . showsPrec 11 gi . space . showsPrec 11 fj . space . showsPrec 11 r
+
+space :: ShowS
+space = showChar ' '
+
+lengthOfIx :: (Foldable f, Foldable g) => ApIx f g -> Int
+lengthOfIx = go 1
+  where
+    go 0 _ = 0
+    go n (PureIx g) = n * length g
+    go n (ApIx g f r) = go (n * length g * length f) r
+
+fromIx :: Functor g => ApIx f g -> ApT f g Int
+fromIx (PureIx gi) = PureT gi
+fromIx (ApIx gi fj r) = ApT (\i j k -> i + j + k) gi fj (fromIx r)
+
+fromTableAndIx :: (HasCallStack, Foldable f, Foldable g, Functor g) => [x] -> ApIx f g -> ApT f g x
+fromTableAndIx xs indices
+  | length xs == n = (xsArr Arr.!) <$> fromIx indices
+  | otherwise = error "Wrong number of elements in the table"
+  where
+    n = lengthOfIx indices
+    xsArr = Arr.listArray (0, n-1) xs
+
+extractElemsAp :: forall f g a. (Traversable f, Traversable g) => ApT f g a -> ([a], Int, ApIx f g)
+extractElemsAp u
+  | null u = ([], 0, ripoff u)
+  | otherwise = go u
+  where
+    ripoff :: ApT f g z -> ApIx f g
+    ripoff (PureT gx) = PureIx (0 <$ gx)
+    ripoff (ApT _ ga fb rc) = ApIx (0 <$ ga) (0 <$ fb) (ripoff rc)
+
+    go :: forall x. ApT f g x -> ([x], Int, ApIx f g)
+    go (PureT gx) = case extractElems gx of
+      (xs, gi) -> (xs, length gi, PureIx gi)
+    go (ApT x ga fb rc) =
+      let (as, gi) = extractElems ga
+          (bs, fj) = extractElems fb
+          lenG = length gi
+          lenF = length fj
+          (cs, lenR, rk) = go rc
+          xs = x <$> as <*> bs <*> cs
+          gi' = (lenF * lenR *) <$> gi
+          fj' = (lenR *) <$> fj
+      in (xs, lenG * lenF * lenR, ApIx gi' fj' rk)
+
+instance (Traversable f, Traversable g) => Traversable (ApT f g) where
+  traverse f u = case extractElemsAp u of
+    (xs, _, indices) -> fmap (\ys -> fromTableAndIx ys indices) (traverse f xs)
+
+instance (Traversable f, Show (f Int), Traversable g, Show (g Int), Show a) => Show (ApT f g a) where
+  showsPrec = showsPrec1
+
+instance (Traversable f, Show (f Int), Traversable g, Show (g Int)) => Show1 (ApT f g) where
+  liftShowsPrec showsPrecX showListX p u =
+    let (xs, _, indices) = extractElemsAp u
+     in showParen (p > 10) $ ("fromTableAndIx " ++) . liftShowsPrec showsPrecX showListX 11 xs . space . showsPrec 11 indices
+
+instance (Eq1 f, Eq1 g, Eq a) => Eq (ApT f g a) where
+  (==) = eq1
+
+instance (Eq1 f, Eq1 g) => Eq1 (ApT f g) where
+  liftEq eq (PureT g1) (PureT g2) = liftEq eq g1 g2
+  liftEq eq (ApT x1 g1 f1 r1) (ApT x2 g2 f2 r2)
+    | emptyEq g1 g2 = boringEq f1 f2 && boringEqApT r1 r2
+    | emptyEq f1 f2 = boringEq g1 g2 && boringEqApT r1 r2
+    | otherwise     =
+        liftEqFor g1 g2 $ \a1 a2 ->
+        liftEqFor f1 f2 $ \b1 b2 ->
+        liftEqFor r1 r2 $ \c1 c2 ->
+          eq (x1 a1 b1 c1) (x2 a2 b2 c2)
+  liftEq _ _ _ = False
+
+instance (Ord1 f, Ord1 g, Ord a) => Ord (ApT f g a) where
+  compare = compare1
+
+instance (Ord1 f, Ord1 g) => Ord1 (ApT f g) where
+    liftCompare cmp (PureT g1) (PureT g2) = liftCompare cmp g1 g2
+    liftCompare cmp (ApT x1 g1 f1 r1) (ApT x2 g2 f2 r2)
+      | emptyEq g1 g2 = boringCompare f1 f2 <> boringCompareApT r1 r2
+      | emptyEq f1 f2 = boringCompare g1 g2 <> boringCompareApT r1 r2
+      | otherwise =
+          liftCompareFor g1 g2 $ \a1 a2 ->
+          liftCompareFor f1 f2 $ \b1 b2 ->
+          liftCompareFor r1 r2 $ \c1 c2 ->
+            cmp (x1 a1 b1 c1) (x2 a2 b2 c2)
+    liftCompare _ (PureT _) (ApT _ _ _ _) = LT
+    liftCompare _ (ApT _ _ _ _) (PureT _) = GT
+
+-- | Order shuffled 'liftEq'
+liftEqFor :: Eq1 f => f a -> f b -> (a -> b -> Bool) -> Bool
+liftEqFor f1 f2 eq = liftEq eq f1 f2
+
+-- | Order shuffled 'liftCompare'
+liftCompareFor :: Ord1 f => f a -> f b -> (a -> b -> Ordering) -> Ordering
+liftCompareFor f1 f2 cmp = liftCompare cmp f1 f2
+
+emptyEq, boringEq :: Eq1 f => f a -> f b -> Bool
+emptyEq = liftEq (\_ _ -> False)
+boringEq = liftEq (\_ _ -> True)
+
+boringCompare :: Ord1 f => f a -> f b -> Ordering
+boringCompare = liftCompare (\_ _ -> EQ)
+
+boringEqApT :: (Eq1 f, Eq1 g) => ApT f g a -> ApT f g b -> Bool
+boringEqApT (PureT g1) (PureT g2) = boringEq g1 g2
+boringEqApT (ApT _ g1 f1 r1) (ApT _ g2 f2 r2) = boringEq g1 g2 && boringEq f1 f2 && boringEqApT r1 r2
+boringEqApT _ _ = False
+
+boringCompareApT :: (Ord1 f, Ord1 g) => ApT f g a -> ApT f g b -> Ordering
+boringCompareApT (PureT g1) (PureT g2) = boringCompare g1 g2
+boringCompareApT (ApT _ g1 f1 r1) (ApT _ g2 f2 r2) = boringCompare g1 g2 <> boringCompare f1 f2 <> boringCompareApT r1 r2
+boringCompareApT (PureT _) (ApT _ _ _ _) = LT
+boringCompareApT (ApT _ _ _ _) (PureT _) = GT
