@@ -6,7 +6,7 @@ description:        The free applicative transformer @ApT@, in the same sense @F
                     is the free monad transformer.
 
 homepage:           https://github.com/viercc/functor-monad/tree/main/free-applicative-t
-license:            GPL-3.0-only
+license:            BSD-3-Clause
 license-file:       LICENSE
 author:             Koji Miyazato
 maintainer:         viercc@gmail.com
