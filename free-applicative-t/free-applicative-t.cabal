@@ -14,7 +14,7 @@ copyright:          2022 Koji Miyazato
 category:           Control
 build-type:         Simple
 extra-doc-files:    CHANGELOG.md, README.md
-tested-with: GHC ==8.10.7, GHC ==9.0.2, GHC ==9.2.5, GHC ==9.4.3
+tested-with: GHC ==8.10.7, GHC ==9.0.2, GHC ==9.2.5, GHC ==9.4.4
 
 common warnings
     ghc-options: -Wall
