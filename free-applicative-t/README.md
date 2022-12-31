@@ -1,6 +1,6 @@
 # free-applicative-t
 
-!(https://img.shields.io/hackage/v/free-applicative-t.svg)
+![At Hackage](https://img.shields.io/hackage/v/free-applicative-t.svg)
 
 This package provides `ApT`, the "free" "applicative transformer" filling the empty corner in the table below.
 
