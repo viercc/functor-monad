@@ -47,6 +47,7 @@ import Data.Functor.Day.Comonoid
 
 import FFunctor
 import Data.Functor.Flip1
+import Data.Functor.Day.Extra (uncurried)
 
 {-| Monad on 'Functor's.
 
@@ -281,25 +282,6 @@ instance Comonoid f => FMonad (Curried f) where
 
     fjoin :: Functor g => Curried f (Curried f g) a -> Curried f g a
     fjoin ffg = Curried $ \f -> runCurried (uncurried ffg) (coapply f)
-
--- @'uncurry' :: (a -> b -> c) -> (a,b) -> c@
-uncurried :: forall f g h c. (Functor f, Functor g) => Curried f (Curried g h) c -> Curried (Day f g) h c
-uncurried fgh = Curried $ \(Day f g op) -> uncurriedAux f g op
-  where
-    uncurriedAux :: forall a b r. f a -> g b -> (a -> b -> c -> r) -> h r
-    uncurriedAux fa gb abcr = h'
-      where
-        f' :: f (c -> b -> r)
-        f' = fmap (\a c b -> abcr a b c) fa
-
-        gh :: Curried g h (b -> r)
-        gh = runCurried fgh f'
-
-        g' :: g ((b -> r) -> r)
-        g' = fmap (\b -> ($ b)) gb
-
-        h' :: h r
-        h' = runCurried gh g'
 
 instance FMonad (FreeApT.ApT f) where
   fpure = FreeApT.liftT
