@@ -1,42 +1,39 @@
-{-# LANGUAGE
-  QuantifiedConstraints,
-  DerivingVia,
-  DerivingStrategies,
-  DeriveTraversable,
-  StandaloneDeriving,
-  
-  RankNTypes,
-  ScopedTypeVariables,
-  
-  InstanceSigs,
-  TypeOperators,
-  TupleSections
-#-}
-module Control.Monad.Trail(Trail(..)) where
+{-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE QuantifiedConstraints #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE TypeOperators #-}
+
+module Control.Monad.Trail (Trail (..)) where
 
 import Control.Monad (ap)
 import Data.Bifunctor
-
 import FMonad
 
-newtype Trail mm a = Trail { runTrail :: mm ((,) a) () }
+newtype Trail mm a = Trail {runTrail :: mm ((,) a) ()}
 
 instance (FFunctor mm) => Functor (Trail mm) where
-    fmap f = Trail . ffmap (first f) . runTrail
-      -- f :: a -> b
-      -- first f :: forall c. (a, c) -> (b, c)
+  fmap f = Trail . ffmap (first f) . runTrail
+
+-- f :: a -> b
+-- first f :: forall c. (a, c) -> (b, c)
 
 instance (FMonad mm) => Applicative (Trail mm) where
-    pure a = Trail $ fpure (a, ())
-    (<*>) = ap
+  pure a = Trail $ fpure (a, ())
+  (<*>) = ap
 
 instance (FMonad mm) => Monad (Trail mm) where
-    ma >>= k = join_ (fmap k ma)
-      where
-        join_ = Trail . fjoin . ffmap (plug . first runTrail) . runTrail
+  ma >>= k = join_ (fmap k ma)
+    where
+      join_ = Trail . fjoin . ffmap (plug . first runTrail) . runTrail
 
 plug :: forall f x. Functor f => (f (), x) -> f x
-plug (f_,a) = a <$ f_
+plug (f_, a) = a <$ f_
 
 {-
 
@@ -62,9 +59,9 @@ Also, for any natural transformation `n :: f ~> g`,
    = n . plug
 
 Note that they are all natural transformations:
-* ffmap _
-* fpure
-* fjoin
+\* ffmap _
+\* fpure
+\* fjoin
 
 (1) Left unit:
 
@@ -132,7 +129,7 @@ join_ . fmap join_
      ffmap (pf . first (wrap . fjoin . ffmap pf . unwrap)) . unwrap
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    {
-     pf . first (wrap . fjoin . ffmap pf . unwrap) 
+     pf . first (wrap . fjoin . ffmap pf . unwrap)
       = plug . first unwrap . first (wrap . fjoin . ffmap pf . unwrap)
       = plug . first (fjoin . ffmap pf . unwrap)
       = plug . first (fjoin . ffmap pf) . first unwrap

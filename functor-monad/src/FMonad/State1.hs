@@ -1,28 +1,24 @@
-{-# LANGUAGE
-  QuantifiedConstraints,
-  DerivingVia,
-  DerivingStrategies,
-  DeriveTraversable,
-  StandaloneDeriving,
-  
-  RankNTypes,
-  ScopedTypeVariables,
-  
-  InstanceSigs,
-  TypeOperators,
-  TupleSections
-#-}
+{-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE QuantifiedConstraints #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE TypeOperators #-}
 
-module FMonad.State1(State1(..), cisState, transState) where
+module FMonad.State1 (State1 (..), cisState, transState) where
 
 import Data.Functor.Day
 import Data.Functor.Day.Curried
 import FMonad
 
-newtype State1 s x a = State1 {
-        runState1 :: Curried s (Day s x) a
-    }
-    deriving Functor
+newtype State1 s x a = State1
+  { runState1 :: Curried s (Day s x) a
+  }
+  deriving (Functor)
 
 pureState :: x a -> State1 s x a
 pureState x = State1 $ unapplied x
@@ -37,8 +33,8 @@ transState :: (forall r. s r -> (s a, x r)) -> State1 s x a
 transState f = State1 $ Curried $ \s -> let (s', x) = f s in Day s' x (flip ($))
 
 instance Functor s => FFunctor (State1 s) where
-    ffmap fg (State1 st) = State1 $ ffmap (ffmap fg) st
+  ffmap fg (State1 st) = State1 $ ffmap (ffmap fg) st
 
 instance Functor s => FMonad (State1 s) where
-    fpure = pureState
-    fjoin = joinState
+  fpure = pureState
+  fjoin = joinState
