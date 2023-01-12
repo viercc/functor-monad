@@ -18,11 +18,17 @@ import Data.Coerce
 import Data.Functor.Classes
 import Data.Kind (Type)
 
-type Flip1 :: (k1 -> k2 -> Type -> Type) -> k2 -> k1 -> Type -> Type
-newtype Flip1 t f g x = Flip1 {unFlip1 :: t g f x}
+-- | Swaps the order of parameters. 'Flip1' is like 'Data.Bifunctor.Flip.Flip' but has
+--   an additional parameter.
+--
+-- > newtype Flip1 t a b c = Flip1 {unFlip1 :: t b a c}
+type Flip1 :: (k1 -> k2 -> k3 -> Type) -> k2 -> k1 -> k3 -> Type
+newtype Flip1 t a b c = Flip1 {unFlip1 :: t b a c}
   deriving stock (Eq, Ord, Show, Read, Traversable)
   deriving
     ( Functor,
+      Eq1,
+      Ord1,
       Foldable,
       Applicative,
       Alternative,
@@ -30,24 +36,23 @@ newtype Flip1 t f g x = Flip1 {unFlip1 :: t g f x}
       MonadPlus,
       MonadFail
     )
-    via (t g f)
-  deriving (Eq1, Ord1) via (t g f)
+    via (t b a)
 
 deriving via
-  (Reflected1 (Flip1 t f g))
+  (Reflected1 (Flip1 t a b))
   instance
-    ( forall a. Show a => Show (t g f a),
-      forall x y. Coercible x y => Coercible (t g f x) (t g f y)
+    ( forall c. Show c => Show (t b a c),
+      forall x y. Coercible x y => Coercible (t b a x) (t b a y)
     ) =>
-    Show1 (Flip1 t f g)
+    Show1 (Flip1 t a b)
 
 deriving via
-  (Reflected1 (Flip1 t f g))
+  (Reflected1 (Flip1 t a b))
   instance
-    ( forall a. Read a => Read (t g f a),
-      forall x y. Coercible x y => Coercible (t g f x) (t g f y)
+    ( forall c. Read c => Read (t b a c),
+      forall x y. Coercible x y => Coercible (t b a x) (t b a y)
     ) =>
-    Read1 (Flip1 t f g)
+    Read1 (Flip1 t a b)
 
 instance (Functor h, MonadFree h (t g f)) => MonadFree h (Flip1 t f g) where
   wrap = Flip1 . wrap . fmap unFlip1
