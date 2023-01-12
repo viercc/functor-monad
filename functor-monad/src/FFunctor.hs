@@ -39,6 +39,12 @@ import Data.Kind (Constraint, Type)
 type (~>) :: (k -> Type) -> (k -> Type) -> Type
 type (~>) f g = forall x. f x -> g x
 
+-- | The kind of a @Functor@
+type FUNCTOR = Type -> Type
+
+-- | The kind of a @FFunctor@.
+type FF = FUNCTOR -> FUNCTOR
+
 -- | Endofunctors on the category of 'Functor's
 --
 -- FFunctor laws:
@@ -76,13 +82,6 @@ type (~>) f g = forall x. f x -> g x
 -- >     --                ^       ^ positive position
 -- >     --                | negative position
 -- >   }
-
--- | The kind of a @Functor@
-type FUNCTOR = Type -> Type
-
--- | The kind of a @FFunctor@.
-type FF = FUNCTOR -> FUNCTOR
-
 type FFunctor :: FF -> Constraint
 class (forall g. Functor g => Functor (ff g)) => FFunctor ff where
   ffmap :: (Functor g, Functor h) => (g ~> h) -> (ff g x -> ff h x)
