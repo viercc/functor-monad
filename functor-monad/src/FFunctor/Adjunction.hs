@@ -22,7 +22,7 @@ import Data.Functor.Day.Curried
 
 import Data.Functor.Kan.Lan
 import Data.Functor.Kan.Ran
-import FMonad.Compose (ComposePre(..), ComposePost)
+import Data.Functor.Precompose (Precompose(..))
 import Data.Functor.Compose (Compose(..))
 
 import qualified Data.Bifunctor.Sum as Bi
@@ -66,22 +66,22 @@ instance Functor f => Adjunction (Day f) (Curried f) where
     leftAdjunct = toCurried
     rightAdjunct = fromCurried
 
-instance Functor f => Adjunction (Lan f) (ComposePre f) where
-    unit :: (Functor g) => g ~> ComposePre f (Lan f g)
-    unit g = ComposePre $ Lan id g
-    counit :: (Functor g) => Lan f (ComposePre f g) ~> g
-    counit (Lan unF (ComposePre gf)) = fmap unF gf
+instance Functor f => Adjunction (Lan f) (Precompose f) where
+    unit :: (Functor g) => g ~> Precompose f (Lan f g)
+    unit g = Precompose $ Lan id g
+    counit :: (Functor g) => Lan f (Precompose f g) ~> g
+    counit (Lan unF (Precompose gf)) = fmap unF gf
 
-instance Functor f => Adjunction (ComposePre f) (Ran f) where
-    unit :: (Functor g) => g ~> Ran f (ComposePre f g)
+instance Functor f => Adjunction (Precompose f) (Ran f) where
+    unit :: (Functor g) => g ~> Ran f (Precompose f g)
     -- g ~> Ran f (g :.: f)
     -- ∀x. g x -> (∀y. (x -> f y) -> g (f y))
-    unit g = Ran $ \toF -> ComposePre (fmap toF g)
+    unit g = Ran $ \toF -> Precompose (fmap toF g)
 
-    counit :: (Functor g) => ComposePre f (Ran f g) ~> g
+    counit :: (Functor g) => Precompose f (Ran f g) ~> g
     -- Ran f g :.: f ~> g
     -- ∀x. (∀y. (f x -> f y) -> g y) -> g x
-    counit (ComposePre ffg) = runRan ffg id
+    counit (Precompose ffg) = runRan ffg id
 
 instance (Adjunction ff uu, Adjunction gg vv) => Adjunction (FCompose ff gg) (FCompose vv uu) where
     unit :: Functor h => h ~> FCompose vv uu (FCompose ff gg h)
@@ -115,8 +115,8 @@ instance (Adjunction ff uu, Adjunction gg vv) => Adjunction (Bi.Sum ff gg) (Bi.P
     rightAdjunct righty (Bi.L2 ff) = rightAdjunct (Bi.proj1 . righty) ff
     rightAdjunct righty (Bi.R2 gg) = rightAdjunct (Bi.proj2 . righty) gg
 
-instance (Rank1.Adjunction f u) => Adjunction (ComposePost f) (ComposePost u) where
-    unit :: (Functor g) => g ~> ComposePost u (ComposePost f g)
+instance (Rank1.Adjunction f u) => Adjunction (Compose f) (Compose u) where
+    unit :: (Functor g) => g ~> Compose u (Compose f g)
     unit gx = Compose . fmap Compose $ Rank1.unit gx
-    counit :: (Functor g) => ComposePost f (ComposePost u g) ~> g
+    counit :: (Functor g) => Compose f (Compose u g) ~> g
     counit = Rank1.counit . fmap getCompose . getCompose

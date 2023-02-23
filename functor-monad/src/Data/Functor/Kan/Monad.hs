@@ -14,26 +14,26 @@ import Data.Functor.Kan.Ran
 import FFunctor
 import FFunctor.FCompose
 import FMonad
-import FMonad.Compose (ComposePre (..))
+import Data.Functor.Precompose (Precompose (..))
 
--- | A 'FMonad' made from adjunction @'ComposePre' f -| 'Ran' f@.
+-- | A 'FMonad' made from adjunction @'Precompose' f -| 'Ran' f@.
 newtype RanComp f g a = RanComp
   { runRanComp :: forall b. (a -> f b) -> g (f b)
   }
   deriving (Functor)
 
--- | @'RanComp' f@ is isomorphic to @'Ran' f '⊚' ComposePre f@. In other words, for any @Functor g@,
+-- | @'RanComp' f@ is isomorphic to @'Ran' f '⊚' Precompose f@. In other words, for any @Functor g@,
 --   these are isomorphisms.
 --
--- > RanComp f g ~ (Ran f ⊚ ComposePre f) g
--- >             ~ Ran f (ComposePre f g)
+-- > RanComp f g ~ (Ran f ⊚ Precompose f) g
+-- >             ~ Ran f (Precompose f g)
 --
 -- > toRanComp . fromRanComp == id
 -- > fromRanComp . toRanComp == id
-fromRanComp :: RanComp f g a -> Ran f (ComposePre f g) a
+fromRanComp :: RanComp f g a -> Ran f (Precompose f g) a
 fromRanComp = coerce
 
-toRanComp :: Ran f (ComposePre f g) a -> RanComp f g a
+toRanComp :: Ran f (Precompose f g) a -> RanComp f g a
 toRanComp = coerce
 
 instance FFunctor (RanComp f) where
@@ -46,25 +46,25 @@ instance FMonad (RanComp f) where
   fjoin :: Functor g => RanComp f (RanComp f g) x -> RanComp f g x
   fjoin rr = RanComp $ \k -> runRanComp (runRanComp rr k) id
 
--- | A 'FMonad' made from adjunction @'Lan' f -| ('ComposePre' f)@
+-- | A 'FMonad' made from adjunction @'Lan' f -| ('Precompose' f)@
 data CompLan f g a where
   CompLan :: (f b -> f a) -> g b -> CompLan f g a
 
 deriving instance Functor f => Functor (CompLan f g)
 
--- | @'CompLan' f@ is isomorphic to @ComposePre f '⊚' Lan f@. In other words, for any @Functor g@,
+-- | @'CompLan' f@ is isomorphic to @Precompose f '⊚' Lan f@. In other words, for any @Functor g@,
 --   these are isomorphisms.
 --
--- > CompLan f g ~ (ComposePre f ⊚ Lan f) g
--- >             ~ ComposePre f (Lan f g)
+-- > CompLan f g ~ (Precompose f ⊚ Lan f) g
+-- >             ~ Precompose f (Lan f g)
 --
 -- > toCompLan . fromCompLan == id
 -- > fromCompLan . toCompLan == id
-fromCompLan :: CompLan f g a -> ComposePre f (Lan f g) a
-fromCompLan (CompLan tr ga) = ComposePre (Lan tr ga)
+fromCompLan :: CompLan f g a -> Precompose f (Lan f g) a
+fromCompLan (CompLan tr ga) = Precompose (Lan tr ga)
 
-toCompLan :: ComposePre f (Lan f g) a -> CompLan f g a
-toCompLan (ComposePre (Lan tr ga)) = CompLan tr ga
+toCompLan :: Precompose f (Lan f g) a -> CompLan f g a
+toCompLan (Precompose (Lan tr ga)) = CompLan tr ga
 
 instance Functor f => FFunctor (CompLan f) where
   ffmap gh (CompLan tr g) = CompLan tr (gh g)
@@ -79,41 +79,41 @@ instance Functor f => FMonad (CompLan f) where
 -- * Transformer versions
 
 -- | A \"transformer\" version of 'RanComp',
---   made out of composition @'Ran' f '⊚' mm '⊚' 'ComposePre' f@.
+--   made out of composition @'Ran' f '⊚' mm '⊚' 'Precompose' f@.
 newtype RanCompT f mm g a = RanCompT
-  { runRanCompT :: forall b. (a -> f b) -> mm (ComposePre f g) b
+  { runRanCompT :: forall b. (a -> f b) -> mm (Precompose f g) b
   }
   deriving (Functor)
 
--- | Witness of isomorphism @RanCompT f mm ~ Ran f ⊚ mm ⊚ ComposePre f@
-fromRanCompT :: RanCompT f mm g x -> (Ran f ⊚ mm ⊚ ComposePre f) g x
+-- | Witness of isomorphism @RanCompT f mm ~ Ran f ⊚ mm ⊚ Precompose f@
+fromRanCompT :: RanCompT f mm g x -> (Ran f ⊚ mm ⊚ Precompose f) g x
 fromRanCompT = coerce
 
-toRanCompT :: (Ran f ⊚ mm ⊚ ComposePre f) g x -> RanCompT f mm g x
+toRanCompT :: (Ran f ⊚ mm ⊚ Precompose f) g x -> RanCompT f mm g x
 toRanCompT = coerce
 
 instance (Functor f, FFunctor mm) => FFunctor (RanCompT f mm) where
-  ffmap gh rak = RanCompT $ ffmap (ComposePre . gh . getComposePre) . runRanCompT rak
+  ffmap gh rak = RanCompT $ ffmap (Precompose . gh . getPrecompose) . runRanCompT rak
 
 instance (Functor f, FMonad mm) => FMonad (RanCompT f mm) where
-  fpure gx = RanCompT $ \k -> fpure (ComposePre (fmap k gx))
-  fjoin rr = RanCompT $ \k -> fjoin . ffmap (\(ComposePre r) -> runRanCompT r id) $ runRanCompT rr k
+  fpure gx = RanCompT $ \k -> fpure (Precompose (fmap k gx))
+  fjoin rr = RanCompT $ \k -> fjoin . ffmap (\(Precompose r) -> runRanCompT r id) $ runRanCompT rr k
 
--- | A \"transformer\" version of 'CompLan', made out of composition @'ComposePre' f '⊚' mm '⊚' 'Lan' f@.
+-- | A \"transformer\" version of 'CompLan', made out of composition @'Precompose' f '⊚' mm '⊚' 'Lan' f@.
 newtype CompLanT f mm g a = CompLanT {runCompLanT :: mm (Lan f g) (f a)}
 
 deriving instance (Functor f, FFunctor mm) => Functor (CompLanT f mm g)
 
--- | Witness of isomorphism @CompLanT f mm ~ ComposePre f ⊚ mm ⊚ Lan f@
-fromCompLanT :: (FFunctor mm, Functor f, Functor g) => CompLanT f mm g x -> (ComposePre f ⊚ mm ⊚ Lan f) g x
+-- | Witness of isomorphism @CompLanT f mm ~ Precompose f ⊚ mm ⊚ Lan f@
+fromCompLanT :: (FFunctor mm, Functor f, Functor g) => CompLanT f mm g x -> (Precompose f ⊚ mm ⊚ Lan f) g x
 fromCompLanT = coerce
 
-toCompLanT :: (FFunctor mm, Functor f, Functor g) => (ComposePre f ⊚ mm ⊚ Lan f) g x -> CompLanT f mm g x
+toCompLanT :: (FFunctor mm, Functor f, Functor g) => (Precompose f ⊚ mm ⊚ Lan f) g x -> CompLanT f mm g x
 toCompLanT = coerce
 
 instance (Functor f, FFunctor mm) => FFunctor (CompLanT f mm) where
   ffmap gh = CompLanT . ffmap (ffmap gh) . runCompLanT
 
 instance (Functor f, FMonad mm) => FMonad (CompLanT f mm) where
-  fpure gx = CompLanT . fpure . getComposePre . fromCompLan $ fpure gx
+  fpure gx = CompLanT . fpure . getPrecompose . fromCompLan $ fpure gx
   fjoin ll = CompLanT $ fjoin . ffmap (\(Lan t (CompLanT m)) -> fmap t m) . runCompLanT $ ll

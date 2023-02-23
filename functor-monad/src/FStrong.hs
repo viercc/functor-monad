@@ -12,8 +12,10 @@ import Data.Functor.Compose
 import Data.Functor.Day
 import Data.Functor.Day.Curried
 import FFunctor
+import FMonad
 import FFunctor.FCompose
-import FMonad.Compose
+import Data.Functor.Precompose ( Precompose(..) )
+import Data.Functor.Bicompose ( Bicompose(..) )
 
 -- | 'FFunctor' with tensorial strength (with respect to 'Day').
 class FFunctor ff => FStrong ff where
@@ -114,12 +116,12 @@ instance Functor f => FStrong (Curried f) where
 instance Functor f => FStrong (Compose f) where
   fstrength (Day (Compose fg) h op) = Compose (fmap (\g -> Day g h op) fg)
 
-instance Functor f => FStrong (ComposePre f) where
-  fstrength (Day (ComposePre gf) h op) = ComposePre (Day gf h (\fa b -> fmap (flip op b) fa))
+instance Functor f => FStrong (Precompose f) where
+  fstrength (Day (Precompose gf) h op) = Precompose (Day gf h (\fa b -> fmap (flip op b) fa))
 
-instance (Functor f, Functor f') => FStrong (ComposeBoth f f') where
-  fstrength (Day (ComposeBoth fgf') h op) =
-    ComposeBoth $
+instance (Functor f, Functor f') => FStrong (Bicompose f f') where
+  fstrength (Day (Bicompose fgf') h op) =
+    Bicompose $
       fmap (\gf' -> Day gf' h (\fa b -> fmap (flip op b) fa)) fgf'
 
 instance FStrong (ReaderT e) where
