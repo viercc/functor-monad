@@ -24,12 +24,12 @@ each corresponds to `Functor` and `Monad` but is higher-order.
 |----|----|----|
 | Takes | `a :: Type` | `g :: Type -> Type`, `Functor g` |
 | Makes | `f a :: Type` | `ff g :: Type -> Type`, `Functor (ff g)` |
-| method | `fmap :: (a -> b) -> f a -> f b` | `ffmap :: (Functor g, Functor h) => (g ~> h) -> (ff g ~> ff h)` |
+| Methods | `fmap :: (a -> b) -> f a -> f b` | `ffmap :: (Functor g, Functor h) => (g ~> h) -> (ff g ~> ff h)` |
 
 |      | a Monad `m`   | a FMonad `mm` |
 |----|----|----|
 | Superclass | Functor | FFunctor |
-| method | `return = pure :: a -> m a` | `fpure :: (Functor g) => g ~> mm g` |
+| Methods | `return = pure :: a -> m a` | `fpure :: (Functor g) => g ~> mm g` |
 |        | `(>>=) :: m a -> (a -> m b) -> m b` | -- |
 |        | `join :: m (m a) -> m a` | `fjoin :: (Functor g) => mm (mm g) ~> mm g` |
 
