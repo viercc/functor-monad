@@ -7,16 +7,16 @@ each corresponds to `Functor` and `Monad` but is higher-order.
 |----|----|----|
 | Takes | `a :: Type` | `g :: Type -> Type`, `Functor g` |
 | Makes | `f a :: Type` | `ff g :: Type -> Type`, `Functor (ff g)` |
-| method | `fmap :: (a -> b) -> f a -> f b` | `ffmap :: (Functor g, Functor h) => (g ~> h) -> (ff g ~> ff h)` |
+| Methods | `fmap :: (a -> b) -> f a -> f b` | `ffmap :: (Functor g, Functor h) => (g ~> h) -> (ff g ~> ff h)` |
 
 |      | a Monad `m`   | a FMonad `mm` |
 |----|----|----|
 | Superclass | Functor | FFunctor |
-| method | `return = pure :: a -> m a` | `fpure :: (Functor g) => g ~> mm g` |
+| Methods | `return = pure :: a -> m a` | `fpure :: (Functor g) => g ~> mm g` |
 |        | `(>>=) :: m a -> (a -> m b) -> m b` | -- |
 |        | `join :: m (m a) -> m a` | `fjoin :: (Functor g) => mm (mm g) ~> mm g` |
 
-See also: https://viercc.github.io/blog/posts/2020-08-23-fmonad.html
+See also: https://viercc.github.io/blog/posts/2020-08-23-fmonad.html (Japanese article)
 
 ## Motivational examples
 
@@ -69,7 +69,7 @@ class (FFunctor mm) => FMonad mm where
     fjoin :: (Functor g) => mm (mm g) ~> mm g
 ```
 
-Both of the above examples, `Sum` and `ReaderT r`, supports these operations.
+Both of the above examples, `Sum` and `ReaderT r`, support these operations.
 
 ```haskell
 instance Functor f => FMonad (Sum f) where
@@ -93,10 +93,36 @@ instance FMonad (ReaderT r) where
 
 ## Comparison against similar type classes
 
-There are similar type classes in other packages.
+There are packages with very similar type classes, but they are more or less different to this package.
 
-**TODO** write comparison
+* From [mmorph](https://hackage.haskell.org/package/mmorph-1.2.0): `MFunctor`, `MMonad`
 
-* From "mmorph": `MFunctor`, `MMonad`
-* From "index-core": `IFunctor`, `IMonad`
-* From "functor-combinators": `HFunctor`, `HInject`, `HBind`
+  They are endofunctors on the category of `Monad` and monad homomorphisms. 
+  In other words, if `T` is a `MFunctor`, it takes a `Monad m` and construct `Monad (T m)`.
+
+  This library is about endofunctors on category of `Functor` and natural transformations,
+  which is similar but definitely distinct concept.
+
+* From [index-core](https://hackage.haskell.org/package/index-core): `IFunctor`, `IMonad`
+
+  They are endofunctors on the category of type constructors of kind `k -> Type` and polymorphic functions `t :: forall (x :: k). f x -> g x`.
+  
+  While any instance of `FFunctor` can be faithfully represented as a `IFunctor`, some instances can't be an instance of `IFunctor` directly.
+  Most notably, [Free](https://hackage.haskell.org/package/free-5.1.8/docs/Control-Monad-Free.html#t:Free) can't have an instance of `IFunctor` directly,
+  because `Free` needs `Functor h` to be able to implement `fmapI`, a method of `IFunctor` to map polymorphic function over an `IFunctor`.
+
+  ```haskell
+  class IFunctor ff where
+    fmapI :: (g ~> h) -> (ff g ~> ff h)
+  ```
+
+  It can be worked around by using another representation of `Free`, for example `Program` from [operational](https://hackage.haskell.org/package/operational) package.
+
+  This package avoids the neccesity of the workaround by restricting the parameter of `FFunctor` always be a `Functor`.
+  Instead, `FFunctor` gives up a instances which doesn't take `Functor` parameter, like something with kind `(Nat -> Type) -> Nat -> Type`.
+
+* From [functor-combinators](https://hackage.haskell.org/package/functor-combinators-0.4.1.2): `HFunctor`, `Inject`, `HBind`
+
+  This package can be thought of as a more developed version of `index-core`, since they share the base assumption.
+  The tradeoff between this package is the same: some `FFunctor` instances can only be `HFunctor` via alternative representations.
+  Same applies for `FMonad` => `Inject + HBind`.
