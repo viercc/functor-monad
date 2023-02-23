@@ -25,6 +25,7 @@ library
                      , transformers
                      , comonad
                      , kan-extensions
+                     , bifunctors
                      , free
                      , free-applicative-t
                      , auto-lift-classes

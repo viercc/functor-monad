@@ -35,6 +35,9 @@ import Data.Functor.Product
 import Data.Functor.Sum
 import Data.Kind (Constraint, Type)
 
+import qualified Data.Bifunctor.Sum as Bi
+import qualified Data.Bifunctor.Product as Bi
+
 -- | Natural transformation arrow
 type (~>) :: (k -> Type) -> (k -> Type) -> Type
 type (~>) f g = forall x. f x -> g x
@@ -140,3 +143,11 @@ instance FFunctor (FreeApT.ApT f) where
 
 instance Functor g => FFunctor (Flip1 FreeApT.ApT g) where
   ffmap f2g = Flip1 . FreeApT.transApT f2g . unFlip1
+
+instance (FFunctor ff, FFunctor gg) => FFunctor (Bi.Sum ff gg) where
+  ffmap t (Bi.L2 ff) = Bi.L2 (ffmap t ff)
+  ffmap t (Bi.R2 gg) = Bi.R2 (ffmap t gg)
+
+instance (FFunctor ff, FFunctor gg) => FFunctor (Bi.Product ff gg) where
+  ffmap t (Bi.Pair ff gg) = Bi.Pair (ffmap t ff) (ffmap t gg)
+

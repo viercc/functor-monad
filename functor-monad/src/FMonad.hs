@@ -41,6 +41,8 @@ import Data.Functor.Product
 import Data.Functor.Sum
 import FFunctor
 
+import qualified Data.Bifunctor.Product as Bi
+
 -- | Monad on 'Functor's.
 --
 -- FMonad laws:
@@ -295,3 +297,13 @@ instance FMonad (FreeApT.ApT f) where
 instance Applicative g => FMonad (Flip1 FreeApT.ApT g) where
   fpure = Flip1 . FreeApT.liftF
   fjoin = Flip1 . FreeApT.foldApT unFlip1 FreeApT.liftT . unFlip1
+
+instance (FMonad ff, FMonad gg) => FMonad (Bi.Product ff gg) where
+  fpure h = Bi.Pair (fpure h) (fpure h)
+  fjoin (Bi.Pair ffP ggP) = Bi.Pair (fjoin (ffmap proj1Bi ffP)) (fjoin (ffmap proj2Bi ggP))
+
+proj1Bi :: Bi.Product ff gg h x -> ff h x
+proj1Bi (Bi.Pair ff _) = ff
+
+proj2Bi :: Bi.Product ff gg h x -> gg h x
+proj2Bi (Bi.Pair _ gg) = gg
