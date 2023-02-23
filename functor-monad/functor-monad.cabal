@@ -11,6 +11,7 @@ extra-doc-files:     CHANGELOG.md, README.md
 library
   hs-source-dirs:  src
   exposed-modules: FFunctor, FFunctor.FCompose,
+                   FFunctor.Adjunction,
                    FMonad, FMonad.Compose, FMonad.FreeT, FMonad.State1, FMonad.FFree,
                    FStrong,
 
@@ -20,11 +21,13 @@ library
                    Data.Functor.Flip1,
                    Data.Functor.Kan.Monad,
                    Data.Functor.Day.Comonoid,
-                   Data.Functor.Day.Extra
+                   Data.Functor.Day.Extra,
+                   Data.Bifunctor.Product.Extra
   build-depends:       base >= 4.10 && < 5
                      , transformers
                      , comonad
                      , kan-extensions
+                     , adjunctions
                      , bifunctors
                      , free
                      , free-applicative-t
