@@ -38,6 +38,11 @@ import Data.Kind (Constraint, Type)
 import qualified Data.Bifunctor.Sum as Bi
 import qualified Data.Bifunctor.Product as Bi
 
+import Control.Comonad.Env (EnvT(..))
+import Control.Comonad.Traced (TracedT(..))
+import Control.Comonad.Store (StoreT (..))
+import Control.Comonad.Cofree (Cofree, hoistCofree)
+
 -- | Natural transformation arrow
 type (~>) :: (k -> Type) -> (k -> Type) -> Type
 type (~>) f g = forall x. f x -> g x
@@ -151,3 +156,14 @@ instance (FFunctor ff, FFunctor gg) => FFunctor (Bi.Sum ff gg) where
 instance (FFunctor ff, FFunctor gg) => FFunctor (Bi.Product ff gg) where
   ffmap t (Bi.Pair ff gg) = Bi.Pair (ffmap t ff) (ffmap t gg)
 
+instance FFunctor (EnvT e) where
+  ffmap gh (EnvT e g) = EnvT e (gh g)
+
+instance FFunctor (TracedT m) where
+  ffmap gh (TracedT g) = TracedT (gh g)
+
+instance FFunctor (StoreT s) where
+  ffmap gh (StoreT g s) = StoreT (gh g) s
+
+instance FFunctor Cofree where
+  ffmap = hoistCofree

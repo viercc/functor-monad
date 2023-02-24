@@ -10,12 +10,16 @@
 
 module Data.Functor.Precompose where
 
+import Data.Kind (Type)
+
 import Control.Applicative (Alternative)
 import Control.Monad (join)
+import Control.Comonad(Comonad(..))
 import Data.Functor.Classes (Eq1, Ord1)
-import Data.Functor.Compose
-import Data.Kind (Type)
+import Data.Functor.Compose ( Compose(..) )
+
 import FMonad
+import FComonad
 
 -- | Single-kinded type alias of Compose
 type (:.:) :: (Type -> Type) -> (Type -> Type) -> Type -> Type
@@ -69,3 +73,7 @@ instance Functor f => FFunctor (Precompose f) where
 instance Monad f => FMonad (Precompose f) where
   fpure = Precompose . fmap return
   fjoin = Precompose . fmap join . getPrecompose . getPrecompose
+
+instance Comonad f => FComonad (Precompose f) where
+  fextract = fmap extract . getPrecompose
+  fextend tr = Precompose . tr . Precompose . fmap duplicate . getPrecompose

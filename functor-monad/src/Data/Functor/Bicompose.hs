@@ -15,8 +15,10 @@ import Data.Functor.Classes (Eq1, Ord1)
 import Data.Functor.Compose
 import Data.Kind (Type)
 import FMonad
+import FComonad
 
 import Data.Functor.Precompose (type (:.:))
+import Control.Comonad
 
 -- | Both-side composition of Monad.
 --
@@ -55,3 +57,7 @@ instance (Functor f, Functor g) => FFunctor (Bicompose f g) where
 instance (Monad f, Monad g) => FMonad (Bicompose f g) where
   fpure = Bicompose . return . fmap return
   fjoin = Bicompose . fmap (fmap join) . join . fmap getBicompose . getBicompose
+
+instance (Comonad f, Comonad g) => FComonad (Bicompose f g) where
+  fextract = fmap extract . extract . getBicompose
+  fextend tr = Bicompose . extend (tr . Bicompose) . fmap (fmap duplicate) . getBicompose

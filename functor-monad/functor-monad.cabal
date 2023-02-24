@@ -14,6 +14,7 @@ library
                    FFunctor.Adjunction,
                    FMonad, FMonad.FreeT, FMonad.State1, FMonad.FFree,
                    FStrong,
+                   FComonad,
 
                    Control.Monad.Trail,
                    
