@@ -12,7 +12,10 @@ library
   hs-source-dirs:  src
   exposed-modules: FFunctor, FFunctor.FCompose,
                    FFunctor.Adjunction,
-                   FMonad, FMonad.FreeT, FMonad.State1,
+                   FMonad, FMonad.FreeT,
+                   FMonad.State.Day,
+                   FMonad.State.Ran,
+                   FMonad.State.Lan,
                    FMonad.FFree, FMonad.Adjoint,
                    FStrong,
                    FComonad, FComonad.Adjoint,
@@ -23,7 +26,6 @@ library
                    Data.Functor.Precompose,
                    Data.Functor.Bicompose,
                    Data.Functor.Flip1,
-                   Data.Functor.Kan.Monad,
                    Data.Functor.Day.Comonoid,
                    Data.Functor.Day.Extra,
                    Data.Bifunctor.Product.Extra

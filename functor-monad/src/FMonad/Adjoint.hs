@@ -9,7 +9,7 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE StandaloneDeriving #-}
-module FMonad.Adjoint(Adjoint(..), AdjointT(..), toAdjointT, fromAdjointT) where
+module FMonad.Adjoint(Adjoint(..), AdjointT(..), fffmap, toAdjointT, fromAdjointT) where
 
 import Control.Monad.Trans.Identity ( IdentityT(runIdentityT) )
 
@@ -49,6 +49,12 @@ deriving
 instance (Adjunction ff uu, FMonad mm) => FMonad (AdjointT ff uu mm) where
     fpure = AdjointT . ffmap fpure . unit
     fjoin = AdjointT . ffmap (fjoin . ffmap counit) . runAdjointT . ffmap runAdjointT
+
+fffmap :: forall mm nn ff uu x.
+     (FFunctor mm, FFunctor nn, FFunctor ff, FFunctor uu, Functor x)
+  => (forall y. (Functor y) => mm y ~> nn y)
+  -> (AdjointT ff uu mm x ~> AdjointT ff uu nn x)
+fffmap trans = AdjointT . ffmap trans . runAdjointT
 
 toAdjointT :: (FFunctor ff, FFunctor uu, FMonad mm, Functor g) => Adjoint ff uu g ~> AdjointT ff uu mm g
 toAdjointT = AdjointT . ffmap fpure . runAdjoint
