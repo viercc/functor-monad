@@ -12,9 +12,10 @@ library
   hs-source-dirs:  src
   exposed-modules: FFunctor, FFunctor.FCompose,
                    FFunctor.Adjunction,
-                   FMonad, FMonad.FreeT, FMonad.State1, FMonad.FFree,
+                   FMonad, FMonad.FreeT, FMonad.State1,
+                   FMonad.FFree, FMonad.Adjoint,
                    FStrong,
-                   FComonad,
+                   FComonad, FComonad.Adjoint,
 
                    Control.Monad.Trail,
                    
