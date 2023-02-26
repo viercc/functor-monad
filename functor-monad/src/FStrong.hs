@@ -22,7 +22,6 @@ import Control.Monad.Trans.Writer (WriterT (..))
 import Control.Comonad.Env (EnvT(..))
 import Control.Comonad.Traced (TracedT(..))
 import Control.Comonad.Store (StoreT (..))
-import Control.Comonad.Cofree (Cofree, hoistCofree)
 
 -- | 'FFunctor' with tensorial strength (with respect to 'Day').
 class FFunctor ff => FStrong ff where
