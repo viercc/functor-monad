@@ -16,6 +16,8 @@ library
                    FMonad.State.Day,
                    FMonad.State.Ran,
                    FMonad.State.Lan,
+                   FMonad.State.Simple.Inner,
+                   FMonad.State.Simple.Outer,
                    FMonad.FFree, FMonad.Adjoint,
                    FStrong,
                    FComonad, FComonad.Adjoint,
