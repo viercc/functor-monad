@@ -3,19 +3,26 @@
 
 module FStrong where
 
+import Data.Coerce (coerce)
+
+import Data.Functor.Day
+import Data.Functor.Day.Curried
+
+import FFunctor
+import FMonad
+
+import Data.Functor.Compose
+import FFunctor.FCompose
+import Data.Functor.Precompose ( Precompose(..) )
+import Data.Functor.Bicompose ( Bicompose(..) )
 import Control.Monad.Trans.Identity (IdentityT (..))
 import Control.Monad.Trans.Reader (ReaderT (..))
 import Control.Monad.Trans.State (StateT (..))
 import Control.Monad.Trans.Writer (WriterT (..))
-import Data.Coerce (coerce)
-import Data.Functor.Compose
-import Data.Functor.Day
-import Data.Functor.Day.Curried
-import FFunctor
-import FMonad
-import FFunctor.FCompose
-import Data.Functor.Precompose ( Precompose(..) )
-import Data.Functor.Bicompose ( Bicompose(..) )
+import Control.Comonad.Env (EnvT(..))
+import Control.Comonad.Traced (TracedT(..))
+import Control.Comonad.Store (StoreT (..))
+import Control.Comonad.Cofree (Cofree, hoistCofree)
 
 -- | 'FFunctor' with tensorial strength (with respect to 'Day').
 class FFunctor ff => FStrong ff where
@@ -136,3 +143,12 @@ instance FStrong (StateT s) where
 
 instance (FStrong ff, FStrong gg) => FStrong (FCompose ff gg) where
   fstrength = FCompose . ffmap fstrength . fstrength . coerce
+
+instance FStrong (EnvT e) where
+  fstrength (Day (EnvT e g) h op) = EnvT e (Day g h op)
+
+instance FStrong (TracedT m) where
+  fstrength (Day (TracedT gf) h op) = TracedT (Day gf h (\mb c m -> op (mb m) c))
+
+instance FStrong (StoreT s) where
+  fstrength (Day (StoreT gf s) h op) = StoreT (Day gf h (\sb c s' -> op (sb s') c)) s

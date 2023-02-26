@@ -1,52 +1,32 @@
-{-# LANGUAGE DeriveTraversable #-}
-{-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE BlockArguments #-}
-
 module FMonad.State.Lan
-  (StateT (..), State, generalize, innerState) where
+  (StateT, State, toInner, fromInner, generalize) where
 
 import Control.Monad.Trans.Identity
 import Data.Functor.Kan.Lan
 import Data.Functor.Precompose
+import qualified FMonad.State.Simple.Inner as Simple.Inner
 
 import FMonad
 import FMonad.Adjoint
+import Data.Tuple (swap)
+import Control.Monad.Trans.Writer (WriterT(..))
+import Control.Comonad.Traced (TracedT(..))
 
-newtype StateT s mm x a = StateT
-  { runStateT :: Precompose s (mm (Lan s x)) a }
-
-deriving
-  stock
-  instance (Functor s, FFunctor mm, Functor x) => Functor (StateT s mm x)
-
+type StateT s = AdjointT (Lan s) (Precompose s)
 type State s = StateT s IdentityT
 
-deriving
-  via (AdjointT (Lan s) (Precompose s) mm)
-  instance (Functor s, FFunctor mm) => FFunctor (StateT s mm)
+toInner :: (Functor x, FFunctor mm) => StateT ((,) s1) mm x ~> Simple.Inner.StateT s1 mm x
+toInner = AdjointT . ffmap (ffmap lanToTraced) . (WriterT . fmap swap . getPrecompose) . runAdjointT
 
-to :: StateT s mm x a -> AdjointT (Lan s) (Precompose s) mm x a
-to = AdjointT . runStateT
+fromInner :: (Functor x, FFunctor mm) => Simple.Inner.StateT s1 mm x ~> StateT ((,) s1) mm x
+fromInner = AdjointT . ffmap (ffmap tracedToLan) . (Precompose . fmap swap . runWriterT) . runAdjointT
 
-from :: AdjointT (Lan s) (Precompose s) mm x a -> StateT s mm x a
-from = StateT . runAdjointT
+lanToTraced :: Functor f => Lan ((,) s1) f ~> TracedT s1 f
+lanToTraced (Lan sr_a fr) = TracedT $ fmap (\r s -> sr_a (s,r)) fr
 
-instance (Functor s, FMonad mm) => FMonad (StateT s mm) where
-  fpure :: (Functor x) => x ~> StateT s mm x
-  fpure = from . fpure
-
-  fjoin :: (Functor x) => StateT s mm (StateT s mm x) ~> StateT s mm x
-  fjoin = from . fjoin . ffmap to . to
-
-generalize :: (Functor s, FMonad mm, Functor x) => State s x ~> StateT s mm x
-generalize = from . fffmap (fpure . runIdentityT) . to
-
-innerState :: (Functor x) => x (s1 -> (s1, a)) -> State ((,) s1) x a
-innerState xState = StateT $
-  Precompose $ fpure $ Lan (\(s1,state) -> state s1) xState
+tracedToLan :: TracedT s1 f ~> Lan ((,) s1) f
+tracedToLan (TracedT fsa) = Lan (\(s1,sa) -> sa s1) fsa

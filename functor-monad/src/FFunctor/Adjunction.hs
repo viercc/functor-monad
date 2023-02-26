@@ -10,6 +10,7 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE StandaloneKindSignatures #-}
+{-# LANGUAGE BlockArguments #-}
 module FFunctor.Adjunction (Adjunction(..)) where
 
 
@@ -30,6 +31,12 @@ import qualified Data.Bifunctor.Product as Bi
 import qualified Data.Bifunctor.Product.Extra as Bi
 
 import qualified Data.Functor.Adjunction as Rank1
+import qualified Control.Monad.Trans.Reader as Rank1
+import qualified Control.Monad.Trans.Writer as Rank1
+import qualified Control.Monad.Trans.State.Lazy as Rank1
+import qualified Control.Comonad.Trans.Env as Rank1
+import qualified Control.Comonad.Trans.Traced as Rank1
+import qualified Control.Comonad.Trans.Store as Rank1
 
 import FFunctor
 import FFunctor.FCompose ( FCompose(..) )
@@ -120,3 +127,16 @@ instance (Rank1.Adjunction f u) => Adjunction (Compose f) (Compose u) where
     unit gx = Compose . fmap Compose $ Rank1.unit gx
     counit :: (Functor g) => Compose f (Compose u g) ~> g
     counit = Rank1.counit . fmap getCompose . getCompose
+
+instance Adjunction (Rank1.EnvT e) (Rank1.ReaderT e) where
+    unit gx = Rank1.ReaderT \e -> Rank1.EnvT e gx
+    counit (Rank1.EnvT e (Rank1.ReaderT f)) = f e
+
+instance Adjunction (Rank1.TracedT m) (Rank1.WriterT m) where
+    unit gx = Rank1.WriterT $ Rank1.TracedT $ fmap (,) gx
+
+    counit (Rank1.TracedT (Rank1.WriterT gwx)) = fmap (\(f, m) -> f m) gwx
+
+instance Adjunction (Rank1.StoreT s) (Rank1.StateT s) where
+    unit gx = Rank1.StateT $ Rank1.StoreT (fmap (,) gx)
+    counit (Rank1.StoreT (Rank1.StateT state) s0) = fmap (\(f, m) -> f m) (state s0)

@@ -1,50 +1,31 @@
-{-# LANGUAGE DeriveTraversable #-}
-{-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE BlockArguments #-}
-
 module FMonad.State.Ran
-  (StateT (..), State, generalize, innerState) where
+  (StateT, State, toInner, fromInner, generalize) where
 
 import Control.Monad.Trans.Identity
 import Data.Functor.Kan.Ran
 import Data.Functor.Precompose
+import qualified FMonad.State.Simple.Inner as Simple.Inner
 
 import FMonad
 import FMonad.Adjoint
+import Control.Monad.Trans.Writer (WriterT(..))
+import Control.Comonad.Traced (TracedT(..))
 
-newtype StateT s mm x a = StateT
-  { runStateT :: Ran s (mm (Precompose s x)) a }
-  deriving (Functor)
-
+type StateT s = AdjointT (Precompose s) (Ran s)
 type State s = StateT s IdentityT
 
-deriving
-  via (AdjointT (Precompose s) (Ran s) mm)
-  instance (Functor s, FFunctor mm) => FFunctor (StateT s mm)
+toInner :: (Functor x, FFunctor mm) => StateT ((->) s1) mm x ~> Simple.Inner.StateT s1 mm x
+toInner = AdjointT . ffmap (ffmap (TracedT . getPrecompose)) . ranToWriter . runAdjointT
 
-to :: StateT s mm x a -> AdjointT (Precompose s) (Ran s) mm x a
-to = AdjointT . runStateT
+fromInner :: (Functor x, FFunctor mm) => Simple.Inner.StateT s1 mm x ~> StateT ((->) s1) mm x
+fromInner = AdjointT . ffmap (ffmap (Precompose . runTracedT)) . writerToRan . runAdjointT
 
-from :: AdjointT (Precompose s) (Ran s) mm x a -> StateT s mm x a
-from = StateT . runAdjointT
+ranToWriter :: Functor f => Ran ((->) s1) f ~> WriterT s1 f
+ranToWriter (Ran ran) = WriterT $ ran (,)
 
-instance (Functor s, FMonad mm) => FMonad (StateT s mm) where
-  fpure :: (Functor x) => x ~> StateT s mm x
-  fpure = from . fpure
-
-  fjoin :: (Functor x) => StateT s mm (StateT s mm x) ~> StateT s mm x
-  fjoin = from . fjoin . ffmap to . to
-
-generalize :: (Functor s, FMonad mm, Functor x) => State s x ~> StateT s mm x
-generalize = from . fffmap (fpure . runIdentityT) . to
-
-innerState :: (Functor x) => x (s1 -> (s1, a)) -> State ((->) s1) x a
-innerState xState = StateT $
-  Ran \f ->
-    fpure $ Precompose $ fmap (\state s1 -> case state s1 of (s1', a) -> f a s1') xState
+writerToRan :: Functor f => WriterT s1 f ~> Ran ((->) s1) f
+writerToRan (WriterT f_as) = Ran $ \k -> fmap (uncurry k) f_as
