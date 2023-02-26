@@ -7,7 +7,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE StandaloneDeriving #-}
-module FMonad.Adjoint(Adjoint, AdjointT(..), adjoint, runAdjoint, fffmap, generalize) where
+module FMonad.Adjoint(Adjoint, adjoint, runAdjoint, AdjointT(..), fffmap, generalize) where
 
 import Control.Monad.Trans.Identity ( IdentityT(..) )
 
