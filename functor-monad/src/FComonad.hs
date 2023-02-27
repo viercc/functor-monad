@@ -68,10 +68,7 @@ instance FComonad Cofree where
   fextract = fmap extract . Cofree.unwrap
 
   fextend :: (Functor g, Functor h) => (Cofree g ~> h) -> (Cofree g ~> Cofree h)
-  fextend = \tr -> ffmap tr . fduplicate_
-    where
-      fduplicate_ :: forall g. Functor g => Cofree g ~> Cofree (Cofree g)
-      fduplicate_ gs = extract gs :< fmap fduplicate_ (duplicate gs)
+  fextend tr = ffmap tr . Cofree.section
 
   {-
   
