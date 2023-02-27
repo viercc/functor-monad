@@ -286,7 +286,7 @@ instance (Applicative f) => FMonad (Day f) where
 
 instance Comonoid f => FMonad (Curried f) where
   fpure :: Functor g => g a -> Curried f g a
-  fpure g = Curried $ \f -> copure f <$> g
+  fpure g = Curried $ \f -> extract f <$> g
 
   fjoin :: Functor g => Curried f (Curried f g) a -> Curried f g a
   fjoin ffg = Curried $ \f -> runCurried (uncurried ffg) (coapply f)
