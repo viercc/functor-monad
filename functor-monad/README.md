@@ -20,7 +20,7 @@ See also: https://viercc.github.io/blog/posts/2020-08-23-fmonad.html (Japanese a
 
 ## Motivational examples
 
-Many types in [base] and popolar libraries like [transformers] have a parameter expecting a `Functor`.
+Many types in [base] and popolar libraries like [transformers] take a parameter expecting a `Functor`.
 For exmple:
 
 ```haskell
@@ -62,6 +62,7 @@ ffmap :: (Functor m, Functor n)  => (m ~> n) -> ReaderT r m x -> ReaderT r n x
 ```
 
 Not all but many `FFunctor` instances can, in addition to `ffmap`, support `Monad`-like operations.
+This package provide another type class `FMonad` to represent such operations.
 
 ```haskell
 class (FFunctor mm) => FMonad mm where
@@ -69,7 +70,7 @@ class (FFunctor mm) => FMonad mm where
     fjoin :: (Functor g) => mm (mm g) ~> mm g
 ```
 
-Both of the above examples, `Sum` and `ReaderT r`, support these operations.
+Both of the above examples, `Sum` and `ReaderT r`, can be instances of `FMonad`.
 
 ```haskell
 instance Functor f => FMonad (Sum f) where
@@ -98,10 +99,10 @@ There are packages with very similar type classes, but they are more or less dif
 * From [mmorph](https://hackage.haskell.org/package/mmorph-1.2.0): `MFunctor`, `MMonad`
 
   They are endofunctors on the category of `Monad` and monad homomorphisms. 
-  In other words, if `T` is a `MFunctor`, it takes a `Monad m` and construct `Monad (T m)`.
+  In other words, if `T` is a `MFunctor`, it takes a `Monad m` and constructs `Monad (T m)`.
 
   This library is about endofunctors on category of `Functor` and natural transformations,
-  which is similar but definitely distinct concept.
+  which are similar but definitely distinct concept.
 
 * From [index-core](https://hackage.haskell.org/package/index-core): `IFunctor`, `IMonad`
 
@@ -109,7 +110,7 @@ There are packages with very similar type classes, but they are more or less dif
   
   While any instance of `FFunctor` can be faithfully represented as a `IFunctor`, some instances can't be an instance of `IFunctor` directly.
   Most notably, [Free](https://hackage.haskell.org/package/free-5.1.8/docs/Control-Monad-Free.html#t:Free) can't have an instance of `IFunctor` directly,
-  because `Free` needs `Functor h` to be able to implement `fmapI`, a method of `IFunctor` to map polymorphic function over an `IFunctor`.
+  because `Free` needs `Functor h` to be able to implement `fmapI`, the method of `IFunctor`.
 
   ```haskell
   class IFunctor ff where
@@ -119,10 +120,10 @@ There are packages with very similar type classes, but they are more or less dif
   It can be worked around by using another representation of `Free`, for example `Program` from [operational](https://hackage.haskell.org/package/operational) package.
 
   This package avoids the neccesity of the workaround by restricting the parameter of `FFunctor` always be a `Functor`.
-  Instead, `FFunctor` gives up a instances which doesn't take `Functor` parameter, like something with kind `(Nat -> Type) -> Nat -> Type`.
+  Instead, `FFunctor` gives up instances which don't take `Functor` parameter, for example, a type constructor `F` with kind `F :: (Nat -> Type) -> Nat -> Type`.
 
 * From [functor-combinators](https://hackage.haskell.org/package/functor-combinators-0.4.1.2): `HFunctor`, `Inject`, `HBind`
 
   This package can be thought of as a more developed version of `index-core`, since they share the base assumption.
   The tradeoff between this package is the same: some `FFunctor` instances can only be `HFunctor` via alternative representations.
-  Same applies for `FMonad` => `Inject + HBind`.
+  Same applies for `FMonad` versus `Inject + HBind`.
