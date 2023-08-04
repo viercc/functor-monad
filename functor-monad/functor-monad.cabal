@@ -34,8 +34,7 @@ library
     Data.Functor.Bicompose,
     Data.Functor.Flip1,
     Data.Functor.Day.Comonoid,
-    Data.Functor.Day.Extra,
-    Data.Bifunctor.Product.Extra
+    Data.Functor.Day.Extra
   other-modules: 
     FFunctor.Instances.Day,
     FFunctor.Instances.Kan,
@@ -45,6 +44,7 @@ library
     FMonad.Instances.Kan,
     FMonad.Instances.Free,
     FMonad.Instances.Trans,
+    Data.Bifunctor.Product.Extra
   build-depends:       base >= 4.10 && < 5
                      , transformers
                      , comonad
