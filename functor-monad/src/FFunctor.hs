@@ -27,6 +27,8 @@ import FFunctor.Instances.Day()
 import FFunctor.Instances.Kan()
 import FFunctor.Instances.Trans()
 import FFunctor.Instances.Free()
+import Data.Functor.Precompose
+import Data.Functor.Bicompose
 
 -- | Natural transformation arrow
 type (~>) :: (k -> Type) -> (k -> Type) -> Type
@@ -95,3 +97,9 @@ instance (FFunctor ff, FFunctor gg) => FFunctor (Bi.Sum ff gg) where
 
 instance (FFunctor ff, FFunctor gg) => FFunctor (Bi.Product ff gg) where
   ffmap t (Bi.Pair ff gg) = Bi.Pair (ffmap t ff) (ffmap t gg)
+
+instance Functor f => FFunctor (Precompose f) where
+  ffmap gh = Precompose . gh . getPrecompose
+
+instance (Functor f, Functor g) => FFunctor (Bicompose f g) where
+  ffmap gh = Bicompose . fmap gh . getBicompose

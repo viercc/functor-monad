@@ -27,6 +27,8 @@ import qualified Control.Comonad.Cofree as Cofree
 
 import FFunctor
 import Data.Coerce (coerce)
+import Data.Functor.Precompose
+import Data.Functor.Bicompose
 
 class FFunctor ff => FComonad ff where
     fextract :: Functor g => ff g ~> g
@@ -46,6 +48,14 @@ instance Functor f => FComonad (Product f) where
 instance Comonad f => FComonad (Compose f) where
     fextract = extract . getCompose
     fextend tr = Compose . extend (tr . Compose) . getCompose
+
+instance Comonad f => FComonad (Precompose f) where
+  fextract = fmap extract . getPrecompose
+  fextend tr = Precompose . tr . Precompose . fmap duplicate . getPrecompose
+
+instance (Comonad f, Comonad g) => FComonad (Bicompose f g) where
+  fextract = fmap extract . extract . getBicompose
+  fextend tr = Bicompose . extend (tr . Bicompose) . fmap (fmap duplicate) . getBicompose
 
 instance (FComonad ff, FComonad gg) => FComonad (Bi.Sum ff gg) where
     fextract (Bi.L2 ffx) = fextract ffx

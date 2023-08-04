@@ -10,15 +10,11 @@
 module Data.Functor.Bicompose where
 
 import Control.Applicative (Alternative)
-import Control.Monad (join)
 import Data.Functor.Classes (Eq1, Ord1)
 import Data.Functor.Compose
 import Data.Kind (Type)
-import FMonad
-import FComonad
 
 import Data.Functor.Precompose (type (:.:))
-import Control.Comonad
 
 -- | Both-side composition of Monad.
 --
@@ -50,14 +46,3 @@ deriving via
   (f :.: h :.: g)
   instance
     (Alternative f, Applicative g, Applicative h) => Alternative (Bicompose f g h)
-
-instance (Functor f, Functor g) => FFunctor (Bicompose f g) where
-  ffmap gh = Bicompose . fmap gh . getBicompose
-
-instance (Monad f, Monad g) => FMonad (Bicompose f g) where
-  fpure = Bicompose . return . fmap return
-  fbind k = Bicompose . fmap (fmap join) . (getBicompose . k =<<) . getBicompose
-
-instance (Comonad f, Comonad g) => FComonad (Bicompose f g) where
-  fextract = fmap extract . extract . getBicompose
-  fextend tr = Bicompose . extend (tr . Bicompose) . fmap (fmap duplicate) . getBicompose

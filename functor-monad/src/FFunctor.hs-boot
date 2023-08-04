@@ -21,6 +21,9 @@ import Data.Functor.Compose ( Compose )
 import Data.Functor.Product ( Product )
 import Data.Functor.Sum ( Sum )
 
+import Data.Functor.Precompose (Precompose)
+import Data.Functor.Bicompose (Bicompose)
+
 -- | Natural transformation arrow
 type (~>) :: (k -> Type) -> (k -> Type) -> Type
 type (~>) f g = forall x. f x -> g x
@@ -38,3 +41,5 @@ class (forall g. Functor g => Functor (ff g)) => FFunctor ff where
 instance Functor f => FFunctor (Sum f)
 instance Functor f => FFunctor (Product f)
 instance Functor f => FFunctor (Compose f)
+instance Functor f => FFunctor (Precompose f)
+instance (Functor f, Functor g) => FFunctor (Bicompose f g)

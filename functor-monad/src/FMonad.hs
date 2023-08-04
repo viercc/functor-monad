@@ -18,6 +18,7 @@ module FMonad
   )
 where
 
+import Control.Monad (join)
 import Data.Functor.Compose
 import Data.Functor.Product
 import Data.Functor.Sum
@@ -26,6 +27,9 @@ import qualified Data.Bifunctor.Product as Bi
 import qualified Data.Bifunctor.Product.Extra as Bi
 
 import FFunctor
+
+import Data.Functor.Precompose
+import Data.Functor.Bicompose
 
 import FMonad.Instances.Day()
 import FMonad.Instances.Kan()
@@ -84,3 +88,11 @@ instance Monad f => FMonad (Compose f) where
 instance (FMonad ff, FMonad gg) => FMonad (Bi.Product ff gg) where
   fpure h = Bi.Pair (fpure h) (fpure h)
   fbind k (Bi.Pair ff gg) = Bi.Pair (fbind (Bi.proj1 . k) ff) (fbind (Bi.proj2 . k) gg)
+
+instance Monad f => FMonad (Precompose f) where
+  fpure = Precompose . fmap return
+  fbind k = Precompose . fmap join . getPrecompose . k . getPrecompose
+
+instance (Monad f, Monad g) => FMonad (Bicompose f g) where
+  fpure = Bicompose . return . fmap return
+  fbind k = Bicompose . fmap (fmap join) . (getBicompose . k =<<) . getBicompose
