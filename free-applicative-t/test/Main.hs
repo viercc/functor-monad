@@ -43,7 +43,7 @@ descMaybe :: Maybe a -> String
 descMaybe = maybe "Nothing" (const "Just _")
 
 genStr :: Gen String
-genStr = Gen.string (Range.linear 0 4) (Gen.element "abc")
+genStr = Gen.string (Range.linear 0 4) (Gen.element @[] @Gen "abc")
 
 genConst :: GenExpr (Const String)
 genConst = Const <$> genStr
