@@ -10,27 +10,41 @@ extra-doc-files:     CHANGELOG.md, README.md
 
 library
   hs-source-dirs:  src
-  exposed-modules: FFunctor, FFunctor.FCompose,
-                   FFunctor.Adjunction,
-                   FMonad, FMonad.FreeT,
-                   FMonad.State.Day,
-                   FMonad.State.Ran,
-                   FMonad.State.Lan,
-                   FMonad.State.Simple.Inner,
-                   FMonad.State.Simple.Outer,
-                   FMonad.FFree, FMonad.Adjoint,
-                   FStrong,
-                   FComonad, FComonad.Adjoint,
 
-                   Control.Monad.Trail,
-                   
-                   Control.Monad.Trans.Free.Extra,
-                   Data.Functor.Precompose,
-                   Data.Functor.Bicompose,
-                   Data.Functor.Flip1,
-                   Data.Functor.Day.Comonoid,
-                   Data.Functor.Day.Extra,
-                   Data.Bifunctor.Product.Extra
+  exposed-modules:
+    FFunctor,
+    FFunctor.FCompose,
+    FFunctor.Adjunction,
+
+    FMonad,
+    FMonad.FreeT,
+    FMonad.State.Day,
+    FMonad.State.Ran,
+    FMonad.State.Lan,
+    FMonad.State.Simple.Inner,
+    FMonad.State.Simple.Outer,
+    FMonad.FFree, FMonad.Adjoint,
+    FStrong,
+    FComonad, FComonad.Adjoint,
+
+    Control.Monad.Trail,
+    
+    Control.Monad.Trans.Free.Extra,
+    Data.Functor.Precompose,
+    Data.Functor.Bicompose,
+    Data.Functor.Flip1,
+    Data.Functor.Day.Comonoid,
+    Data.Functor.Day.Extra,
+    Data.Bifunctor.Product.Extra
+  other-modules: 
+    FFunctor.Instances.Day,
+    FFunctor.Instances.Kan,
+    FFunctor.Instances.Free,
+    FFunctor.Instances.Trans,
+    FMonad.Instances.Day,
+    FMonad.Instances.Kan,
+    FMonad.Instances.Free,
+    FMonad.Instances.Trans,
   build-depends:       base >= 4.10 && < 5
                      , transformers
                      , comonad
