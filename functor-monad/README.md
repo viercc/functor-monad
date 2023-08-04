@@ -13,7 +13,7 @@ each corresponds to `Functor` and `Monad` but is higher-order.
 |----|----|----|
 | Superclass | Functor | FFunctor |
 | Methods | `return = pure :: a -> m a` | `fpure :: (Functor g) => g ~> mm g` |
-|        | `(>>=) :: m a -> (a -> m b) -> m b` | -- |
+|        | `(=<<) :: (a -> m b) -> m a -> m b` | `fbind :: (Functor g, Functor h) => (g ~> mm h) -> (mm g ~> mm h)` |
 |        | `join :: m (m a) -> m a` | `fjoin :: (Functor g) => mm (mm g) ~> mm g` |
 
 See also: https://viercc.github.io/blog/posts/2020-08-23-fmonad.html (Japanese article)
@@ -67,7 +67,7 @@ This package provide another type class `FMonad` to represent such operations.
 ```haskell
 class (FFunctor mm) => FMonad mm where
     fpure :: (Functor g) => g ~> mm g
-    fjoin :: (Functor g) => mm (mm g) ~> mm g
+    fbind :: (Functor g, Functor h) => (g ~> ff h) -> ff g a -> ff h a
 ```
 
 Both of the above examples, `Sum` and `ReaderT r`, can be instances of `FMonad`.
@@ -77,19 +77,18 @@ instance Functor f => FMonad (Sum f) where
     fpure :: (Functor g) => g ~> Sum f g
     fpure = InR
 
-    fjoin :: (Functor g) => Sum f (Sum f g) ~> Sum f g
-    fjoin (InL fx)       = InL fx
-    fjoin (InR (InL fx)) = InL fx
-    fjoin (InR (InR gx)) = InR gx
+    fbind :: (Functor g, Functor h) => (g ~> Sum f h) -> Sum f g a -> Sum f h a
+    fbind _ (InL fa) = InL fa
+    fbind k (InR ga) = k ga
 
 instance FMonad (ReaderT r) where
     fpure :: (Functor m) => m ~> ReaderT r m
     -- return :: x -> (e -> x)
     fpure = ReaderT . return
 
-    fjoin :: (Functor m) => ReaderT r (ReaderT r m) ~> ReaderT r m
+    fbind :: (Functor m, Functor n) => (m ~> ReaderT r n) -> ReaderT r m a -> ReaderT r n a
     -- join :: (e -> e -> x) -> (e -> x)
-    fjoin = ReaderT . join . fmap runReaderT . runReaderT
+    fbind k = ReaderT . (>>= runReaderT . k) . runReaderT 
 ```
 
 ## Comparison against similar type classes

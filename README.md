@@ -30,7 +30,7 @@ each corresponds to `Functor` and `Monad` but is higher-order.
 |----|----|----|
 | Superclass | Functor | FFunctor |
 | Methods | `return = pure :: a -> m a` | `fpure :: (Functor g) => g ~> mm g` |
-|        | `(>>=) :: m a -> (a -> m b) -> m b` | -- |
+|        | `(=<<) :: (a -> m b) -> m a -> m b` | `fbind :: (Functor g, Functor h) => (g ~> mm h) -> (mm g ~> mm h)` |
 |        | `join :: m (m a) -> m a` | `fjoin :: (Functor g) => mm (mm g) ~> mm g` |
 
 More on [the README of the package itself](functor-monad/README.md).
