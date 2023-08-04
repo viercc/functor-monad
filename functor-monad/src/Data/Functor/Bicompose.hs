@@ -56,7 +56,7 @@ instance (Functor f, Functor g) => FFunctor (Bicompose f g) where
 
 instance (Monad f, Monad g) => FMonad (Bicompose f g) where
   fpure = Bicompose . return . fmap return
-  fbind (Bicompose fhg) k = Bicompose $ fmap (fmap join) . (getBicompose . k =<<) $ fhg
+  fbind k = Bicompose . fmap (fmap join) . (getBicompose . k =<<) . getBicompose
 
 instance (Comonad f, Comonad g) => FComonad (Bicompose f g) where
   fextract = fmap extract . extract . getBicompose

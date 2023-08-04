@@ -36,8 +36,8 @@ instance (FFunctor ff) => FFunctor (FFree ff) where
 
 instance (FFunctor ff) => FMonad (FFree ff) where
   fpure = FPure
-  fbind (FPure gx) k = k gx
-  fbind (FFree fmmx) k = FFree (ffmap (`fbind` k) fmmx)
+  fbind k (FPure gx) = k gx
+  fbind k (FFree fmmx) = FFree (ffmap (fbind k) fmmx)
 
 instance (FStrong ff) => FStrong (FFree ff) where
   fstrength (Day ffg h op) = case ffg of

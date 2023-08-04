@@ -79,7 +79,7 @@ instance Functor f => FFunctor (FreeT f) where
 
 instance Functor f => FMonad (FreeT f) where
   fpure = WrapFreeT . inr
-  fbind m k = WrapFreeT . fconcatFreeT_ . hoistFreeT unwrapFreeT . unwrapFreeT $ ffmap k m
+  fbind k = WrapFreeT . fconcatFreeT_ . hoistFreeT unwrapFreeT . unwrapFreeT . ffmap k
 
 instance Functor m => FFunctor (FreeT' m) where
   ffmap f = WrapFreeT' . transFreeT_ f . unwrapFreeT'
@@ -88,5 +88,5 @@ instance Monad m => FMonad (FreeT' m) where
   fpure :: forall g. Functor g => g ~> FreeT' m g
   fpure = WrapFreeT' . inl
 
-  fbind :: forall g h a. (Monad m, Functor g, Functor h) => FreeT' m g a -> (g ~> FreeT' m h) -> FreeT' m h a
-  fbind m k = WrapFreeT' . eitherFreeT_ id inr . transFreeT_ unwrapFreeT' . unwrapFreeT' $ ffmap k m
+  fbind :: forall g h a. (Functor g, Functor h) => (g ~> FreeT' m h) -> FreeT' m g a -> FreeT' m h a
+  fbind k = WrapFreeT' . eitherFreeT_ id inr . transFreeT_ unwrapFreeT' . unwrapFreeT' . ffmap k
