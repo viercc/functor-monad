@@ -4,7 +4,11 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Data.Functor.Day.Comonoid (Comonoid (..), erase1, erase2, duplicateDefault, extendDefault, dayToCompose) where
+module Data.Functor.Day.Comonoid (
+  Comonoid (..), erase1, erase2, duplicateDefault, extendDefault, dayToCompose,
+  -- * Re-export
+  Comonad(..)
+  ) where
 
 import Data.Functor.Day
 import Data.Functor.Sum
