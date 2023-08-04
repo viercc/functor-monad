@@ -72,7 +72,7 @@ instance Functor f => FFunctor (Precompose f) where
 
 instance Monad f => FMonad (Precompose f) where
   fpure = Precompose . fmap return
-  fjoin = Precompose . fmap join . getPrecompose . getPrecompose
+  fbind (Precompose gf) k = Precompose $ fmap join . getPrecompose . k $ gf
 
 instance Comonad f => FComonad (Precompose f) where
   fextract = fmap extract . getPrecompose

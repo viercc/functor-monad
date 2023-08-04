@@ -34,7 +34,7 @@ deriving
 
 instance (Adjunction ff uu, FMonad mm) => FMonad (AdjointT ff uu mm) where
     fpure = AdjointT . ffmap fpure . unit
-    fjoin = AdjointT . ffmap (fjoin . ffmap counit) . runAdjointT . ffmap runAdjointT
+    fbind fmu k = AdjointT . ffmap (`fbind` counit) . runAdjointT . ffmap (runAdjointT . k) $ fmu
 
 adjoint :: (FFunctor ff, FFunctor uu, Functor x) => uu (ff x) ~> Adjoint ff uu x
 adjoint = AdjointT . ffmap IdentityT

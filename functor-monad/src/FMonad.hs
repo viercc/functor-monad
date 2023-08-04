@@ -14,6 +14,7 @@ module FMonad
   ( type (~>),
     FFunctor (..),
     FMonad (..),
+    fjoin
   )
 where
 
@@ -73,47 +74,51 @@ import qualified Data.Bifunctor.Product.Extra as Bi
 --    > fjoin . fjoin = fjoin . ffmap fjoin
 class FFunctor ff => FMonad ff where
   fpure :: (Functor g) => g ~> ff g
-  fjoin :: (Functor g) => ff (ff g) ~> ff g
+  fbind :: (Functor g, Functor h) => ff g a -> (g ~> ff h) -> ff h a
+
+fjoin :: (FMonad ff, Functor g) => ff (ff g) ~> ff g
+fjoin x = fbind x id
 
 instance Functor f => FMonad (Sum f) where
   fpure = InR
-  fjoin (InL fa) = InL fa
-  fjoin (InR (InL fa)) = InL fa
-  fjoin (InR (InR ga)) = InR ga
+
+  fbind (InL fa) _ = InL fa
+  fbind (InR ga) k = k ga
 
 instance (Functor f, forall a. Monoid (f a)) => FMonad (Product f) where
   fpure = Pair mempty
-  fjoin (Pair fa1 (Pair fa2 ga)) = Pair (fa1 <> fa2) ga
+  fbind (Pair fa1 ga) k = case k ga of
+    (Pair fa2 ha) -> Pair (fa1 <> fa2) ha
 
 instance Monad f => FMonad (Compose f) where
   fpure = Compose . return
-  fjoin = Compose . join . fmap getCompose . getCompose
+  fbind fg k = fjoin_ $ ffmap k fg
+    where fjoin_ = Compose . join . fmap getCompose . getCompose
 
 instance FMonad Lift where
   fpure = Other
-  fjoin (Pure a) = Pure a
-  fjoin (Other (Pure a)) = Pure a
-  fjoin (Other (Other fa)) = Other fa
+  fbind (Pure a) _ = Pure a
+  fbind (Other ga) k = k ga
 
 instance FMonad FreeM.Free where
   fpure = FreeM.liftF
-  fjoin = FreeM.retract
+  fbind m k = FreeM.foldFree k m
 
 instance FMonad FreeMChurch.F where
   fpure = FreeMChurch.liftF
-  fjoin = FreeMChurch.retract
+  fbind m k = FreeMChurch.foldF k m
 
 instance FMonad FreeAp.Ap where
   fpure = FreeAp.liftAp
-  fjoin = FreeAp.retractAp
+  fbind m k = FreeAp.runAp k m
 
 instance FMonad FreeApFinal.Ap where
   fpure = FreeApFinal.liftAp
-  fjoin = FreeApFinal.retractAp
+  fbind m k = FreeApFinal.runAp k m
 
 instance FMonad IdentityT where
   fpure = IdentityT
-  fjoin (IdentityT (IdentityT fa)) = IdentityT fa
+  fbind (IdentityT ga) k = k ga
 
 instance FMonad (ReaderT e) where
   -- See the similarity between 'Compose' @((->) e)@
@@ -122,7 +127,9 @@ instance FMonad (ReaderT e) where
   fpure = ReaderT . return
 
   -- join :: (e -> e -> x) -> (e -> x)
-  fjoin = ReaderT . join . fmap runReaderT . runReaderT
+  fbind m k = fjoin_ $ ffmap k m
+    where
+      fjoin_ = ReaderT . join . fmap runReaderT . runReaderT 
 
 instance Monoid m => FMonad (WriterT m) where
   -- See the similarity between 'FlipCompose' @(Writer m)@
@@ -131,7 +138,9 @@ instance Monoid m => FMonad (WriterT m) where
   fpure = WriterT . fmap (,mempty)
 
   -- fmap join :: f (Writer m (Writer m x)) -> f (Writer m x)
-  fjoin = WriterT . fmap (\((x, m1), m2) -> (x, m2 <> m1)) . runWriterT . runWriterT
+  fbind m k = fjoin_ $ ffmap k m
+    where
+      fjoin_ = WriterT . fmap (\((x, m1), m2) -> (x, m2 <> m1)) . runWriterT . runWriterT
 
 {-
 
@@ -195,7 +204,7 @@ instance Monoid s => FMonad (StateT s) where
   -- See the discussion below.
   fpure fa = StateT $ \_ -> (,mempty) <$> fa
 
-  fjoin = StateT . fjoin_ . fmap runStateT . runStateT
+  fbind m k = StateT . fjoin_ . fmap runStateT . runStateT $ ffmap k m
     where
       fjoin_ :: forall f a. (Functor f) => (s -> s -> f ((a, s), s)) -> s -> f (a, s)
       fjoin_ = fmap (fmap joinWriter) . joinReader
@@ -241,13 +250,10 @@ instance (Comonad w) => FMonad (Ran w) where
   --       f x -> (forall b. (x -> w b) -> f b)
   fpure f = Ran $ \k -> fmap (extract . k) f
 
-  fjoin ::
-    forall f x.
-    (Functor f) =>
-    Ran w (Ran w f) x ->
-    Ran w f x
-  --       (forall b c. (x -> w b) -> (b -> w c) -> f c) -> (forall d. (x -> w d) -> f d)
-  fjoin rrf = Ran $ \k -> runRan (runRan rrf (duplicate . k)) id
+  fbind m t = fjoin_ $ ffmap t m
+    where 
+      --       (forall b c. (x -> w b) -> (b -> w c) -> f c) -> (forall d. (x -> w d) -> f d)
+      fjoin_ rrf = Ran $ \k -> runRan (runRan rrf (duplicate . k)) id
 
 -- | @Lan w (Lan w f) ~ Lan ('Compose' w w) f@
 instance (Comonad w) => FMonad (Lan w) where
@@ -259,13 +265,11 @@ instance (Comonad w) => FMonad (Lan w) where
   --       f x -> exists b. (w b -> x, f b)
   fpure f = Lan extract f
 
-  fjoin ::
-    forall f x.
-    (Functor f) =>
-    Lan w (Lan w f) x ->
-    Lan w f x
-  --       (exists b. (w b -> x, exists c. (w c -> b, f c)) -> exists d. (w d -> x, f d)
-  fjoin (Lan j1 (Lan j2 f)) = Lan (j2 =>= j1) f
+  
+  fbind m k = fjoin_ $ ffmap k m
+    where
+      --       (exists b. (w b -> x, exists c. (w c -> b, f c)) -> exists d. (w d -> x, f d)
+      fjoin_ (Lan j1 (Lan j2 f)) = Lan (j2 =>= j1) f
 
 instance (Applicative f) => FMonad (Day f) where
   fpure :: g ~> Day f g
@@ -274,9 +278,8 @@ instance (Applicative f) => FMonad (Day f) where
   {-
      day :: f (a -> b) -> g a -> Day f g b
   -}
-
-  fjoin :: Day f (Day f g) ~> Day f g
-  fjoin = trans1 dap . assoc
+  
+  fbind m k = trans1 dap . assoc . trans2 k $ m
 
 {-
    dap :: Day f f ~> f
@@ -288,17 +291,16 @@ instance Comonoid f => FMonad (Curried f) where
   fpure :: Functor g => g a -> Curried f g a
   fpure g = Curried $ \f -> extract f <$> g
 
-  fjoin :: Functor g => Curried f (Curried f g) a -> Curried f g a
-  fjoin ffg = Curried $ \f -> runCurried (uncurried ffg) (coapply f)
+  fbind m k = Curried $ \f -> runCurried (uncurried (ffmap k m)) (coapply f)
 
 instance FMonad (FreeApT.ApT f) where
   fpure = FreeApT.liftT
-  fjoin = FreeApT.fjoinApTLeft
+  fbind m k = FreeApT.fjoinApTLeft $ ffmap k m
 
 instance Applicative g => FMonad (Flip1 FreeApT.ApT g) where
   fpure = Flip1 . FreeApT.liftF
-  fjoin = Flip1 . FreeApT.foldApT unFlip1 FreeApT.liftT . unFlip1
+  fbind m k = Flip1 . FreeApT.foldApT unFlip1 FreeApT.liftT . unFlip1 $ ffmap k m
 
 instance (FMonad ff, FMonad gg) => FMonad (Bi.Product ff gg) where
   fpure h = Bi.Pair (fpure h) (fpure h)
-  fjoin (Bi.Pair ffP ggP) = Bi.Pair (fjoin (ffmap Bi.proj1 ffP)) (fjoin (ffmap Bi.proj2 ggP))
+  fbind (Bi.Pair ff gg) k = Bi.Pair (fbind ff (Bi.proj1 . k)) (fbind gg (Bi.proj2 . k))
