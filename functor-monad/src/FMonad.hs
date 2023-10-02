@@ -32,7 +32,7 @@ import Control.Monad.Trans.State
 import Control.Monad.Trans.Writer
 import Data.Functor.Compose
 import Data.Functor.Day
-import Data.Functor.Day.Comonoid
+import Data.Functor.Day.Comonoid hiding (Comonad(..))
 import Data.Functor.Day.Curried
 import Data.Functor.Day.Extra (uncurried)
 import Data.Functor.Flip1

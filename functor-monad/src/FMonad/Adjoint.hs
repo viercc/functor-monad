@@ -18,6 +18,7 @@ import FFunctor.FCompose
 import FFunctor.Adjunction
 
 newtype AdjointT ff uu mm g x = AdjointT { runAdjointT :: uu (mm (ff g)) x }
+
 type Adjoint ff uu = AdjointT ff uu IdentityT
 
 deriving

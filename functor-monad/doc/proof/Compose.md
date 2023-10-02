@@ -2,5 +2,5 @@
 |----|----|
 |Stub| |
 
-# `ComposePost, ComposePre, ComposeBoth` are lawful `FMonad`
+# `Compose, ComposePre, ComposeBoth` are lawful `FMonad`
 # Corollary: lawfulness of `ReaderT, WriterT, StateT`

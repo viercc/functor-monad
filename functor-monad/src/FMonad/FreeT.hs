@@ -12,6 +12,7 @@
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeOperators #-}
 
+-- | 'Original.FreeT' is a 'FMonad' in two different ways
 module FMonad.FreeT
   ( module FMonad,
     FreeT (..),
@@ -27,7 +28,20 @@ import Control.Monad.Trans.Free.Extra
 import Data.Functor.Classes
 import FMonad
 
--- | Redefine FreeT so that some instances don't require 'Monad' instead of 'Functor'
+-- | @FreeT f@ is 'FMonad' for any @Functor f@.
+--   
+--   Due to a historical reason, the original 'Original.FreeT' type requires @Monad m@
+--   to be a @Functor@ itself (in other words, to have @Functor (FreeT f m)@ instance.)
+--   That blocks @FreeT f@ becomes a @FFunctor@. The @FreeT@ type this module exports is
+--   a thin wrapper around the original, \"fix\"ing its @Functor@ instance.
+--   
+-- @
+-- import Control.Monad.Trans.Free as Original
+-- 
+-- instance (Functor f, Monad m)   => Functor (Original.FreeT f m)
+-- instance (Functor f, Functor m) => Functor (FreeT f m)
+-- instance (Functor f) => FFunctor (FreeT f)
+-- @
 newtype FreeT f m b = WrapFreeT {unwrapFreeT :: Original.FreeT f m b}
   deriving
     ( Applicative,
@@ -45,6 +59,20 @@ newtype FreeT f m b = WrapFreeT {unwrapFreeT :: Original.FreeT f m b}
     (Show, Read, Eq, Ord)
     via (Original.FreeT f m b)
 
+-- | @FreeT'@ is a @FreeT@ but its arguments are flipped.
+--
+-- @
+-- FreeT' m f a ≡ FreeT f m a
+-- @
+--   
+-- @FreeT' m@ is a @FFunctor@ and @FMonad@ evidenced by these existing functions,
+-- specialized for the purpose.
+--   
+-- @
+-- 'Original.transFreeT' :: (Functor g, Functor m) => (f ~> g) -> FreeT f m ~> FreeT g m
+-- 'Original.liftF' :: (Functor f, Monad m) => f ~> FreeT f m
+-- 'Original.foldFreeT' id :: (Functor f, Monad m) => FreeT (FreeT f m) m ~> FreeT f m 
+-- @
 newtype FreeT' m f b = WrapFreeT' {unwrapFreeT' :: Original.FreeT f m b}
   deriving
     (Functor)

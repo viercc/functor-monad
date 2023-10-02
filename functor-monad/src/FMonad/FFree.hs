@@ -10,7 +10,7 @@
 
 module FMonad.FFree where
 
-import Data.Functor.Day (Day (..))
+import Data.Functor.Day (Day (..), day, dap)
 import Data.Functor.Identity
 import FFunctor
 import FMonad
@@ -61,9 +61,9 @@ foldFFree toMM = go
 retract :: (FMonad ff, Functor g) => FFree ff g ~> ff g
 retract = foldFFree id
 
-instance FStrong ff => Applicative (FFree ff Identity) where
-  pure = FPure . Identity
-  FPure (Identity x) <*> y = x <$> y
+instance (FStrong ff, Applicative g) => Applicative (FFree ff g) where
+  pure = FPure . pure
+  FPure gx <*> y = ffmap dap $ fstrength' (day gx y)
   FFree ffr <*> y = FFree $ innerAp ffr y
 
 liftF :: (FFunctor ff, Functor g) => ff g ~> FFree ff g

@@ -6,7 +6,7 @@
 
 module Data.Functor.Day.Comonoid (
   Comonoid (..), erase1, erase2, duplicateDefault, extendDefault, dayToCompose,
-  -- * Re-export
+  -- * Reexport
   Comonad(..)
   ) where
 
@@ -37,12 +37,16 @@ import Control.Comonad (Comonad(..))
 class Comonad f => Comonoid f where
   coapply :: f a -> Day f f a
 
+-- | Every 'Comonoid' is a 'Comonad'.
 duplicateDefault :: Comonoid f => f a -> f (f a)
 duplicateDefault = dayToCompose . coapply
 
+-- | Every 'Comonoid' is a 'Comonad'.
 extendDefault :: Comonoid f => (f a -> b) -> f a -> f b
 extendDefault t = fmap t . duplicateDefault
 
+
+-- | @'Day' f g@ can be turned into a composition of @f@ and @g@.
 dayToCompose :: (Functor f, Functor g) => Day f g a -> f (g a)
 dayToCompose (Day fb fc op) = fmap (\b -> fmap (op b) fc) fb
 
@@ -61,7 +65,9 @@ transBi :: (forall x. f x -> f' x) -> (forall x. g x -> g' x) -> Day f g a -> Da
 transBi t u (Day f g op) = Day (t f) (u g) op
 
 interchange :: Day (Day f f') (Day g g') x -> Day (Day f g) (Day f' g') x
-interchange = disassoc . trans1 (assoc . trans2 swapped . disassoc) . assoc
+-- interchange = disassoc . trans1 (assoc . trans2 swapped . disassoc) . assoc
+interchange (Day (Day fa fb ab_x) (Day gc gd cd_y) xy_r) =
+  Day (Day fa gc (,)) (Day fb gd (,)) (\(a,c) (b,d) -> xy_r (ab_x a b) (cd_y c d))
 
 instance Comonoid ((,) e) where
   coapply :: forall x. (e, x) -> Day ((,) e) ((,) e) x

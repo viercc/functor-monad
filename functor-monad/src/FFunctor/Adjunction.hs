@@ -41,6 +41,7 @@ import qualified Control.Comonad.Trans.Store as Rank1
 import FFunctor
 import FFunctor.FCompose ( FCompose(..) )
 
+-- | An adjunction between \(\mathrm{Hask}^{\mathrm{Hask}}\) and \(\mathrm{Hask}^{\mathrm{Hask}}\).
 type Adjunction :: FF -> FF -> Constraint
 class (FFunctor ff, FFunctor uu) => Adjunction ff uu | ff -> uu, uu -> ff where
     {-# MINIMAL (unit, counit) | (leftAdjunct, rightAdjunct) #-}

@@ -3,7 +3,7 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
--- | Ordinary 'Monad' out of 'FMonad'
+-- | 'Trail' type which makes an ordinary 'Monad' out of 'FMonad'
 module Control.Monad.Trail (Trail (..)) where
 
 import Control.Monad (ap)

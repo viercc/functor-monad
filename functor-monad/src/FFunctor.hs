@@ -9,9 +9,11 @@
 
 module FFunctor
   ( type (~>),
+    FFunctor (..),
+
+    -- * Utilities to kind-annotate FFunctor instances
     FUNCTOR,
     FF,
-    FFunctor (..),
   )
 where
 

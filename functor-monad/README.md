@@ -20,8 +20,9 @@ See also: https://viercc.github.io/blog/posts/2020-08-23-fmonad.html (Japanese a
 
 ## Motivational examples
 
-Many types in [base] and popolar libraries like [transformers] take a parameter expecting a `Functor`.
-For exmple:
+Many types defined in [base](https://hackage.haskell.org/package/base-4.18.1.0) and popolar libraries like
+[transformers](https://hackage.haskell.org/package/transformers-0.6.1.1) take a parameter expecting a `Functor`.
+Here are two, simple examples.
 
 ```haskell
 -- From "base", Data.Functor.Sum
@@ -51,7 +52,7 @@ mapReaderT' :: (m ~> n) -> (ReaderT r m ~> ReaderT r n)
 mapReaderT' naturalTrans = mapReaderT naturalTrans
 ```
 
-The type class `FFunctor` abstracts such functions.
+The type class `FFunctor` abstracts type constructors equipped with such a function.
 
 ```haskell
 class (forall g. Functor g => Functor (ff g)) => FFunctor ff where
@@ -70,7 +71,7 @@ class (FFunctor mm) => FMonad mm where
     fbind :: (Functor g, Functor h) => (g ~> ff h) -> ff g a -> ff h a
 ```
 
-Both of the above examples, `Sum` and `ReaderT r`, can be instances of `FMonad`.
+Both of the above examples, `Sum` and `ReaderT r`, have `FMonad` instances.
 
 ```haskell
 instance Functor f => FMonad (Sum f) where
@@ -107,8 +108,8 @@ There are packages with very similar type classes, but they are more or less dif
 
   They are endofunctors on the category of type constructors of kind `k -> Type` and polymorphic functions `t :: forall (x :: k). f x -> g x`.
   
-  While any instance of `FFunctor` can be faithfully represented as a `IFunctor`, some instances can't be an instance of `IFunctor` directly.
-  Most notably, [Free](https://hackage.haskell.org/package/free-5.1.8/docs/Control-Monad-Free.html#t:Free) can't have an instance of `IFunctor` directly,
+  While any instance of `FFunctor` from this package can be faithfully represented as a `IFunctor`, some instances can't be an instance of `IFunctor` _as is_.
+  Most notably, [Free](https://hackage.haskell.org/package/free-5.1.8/docs/Control-Monad-Free.html#t:Free) can't be an instance of `IFunctor` directly,
   because `Free` needs `Functor h` to be able to implement `fmapI`, the method of `IFunctor`.
 
   ```haskell
@@ -116,10 +117,11 @@ There are packages with very similar type classes, but they are more or less dif
     fmapI :: (g ~> h) -> (ff g ~> ff h)
   ```
 
-  It can be worked around by using another representation of `Free`, for example `Program` from [operational](https://hackage.haskell.org/package/operational) package.
+  There exists a workaround: you can use another representation of `Free f` which doesn't require `Functor f` to be a `Functor` itself,
+  for example `Program` from [operational](https://hackage.haskell.org/package/operational) package.
 
-  This package avoids the neccesity of the workaround by restricting the parameter of `FFunctor` always be a `Functor`.
-  Instead, `FFunctor` gives up instances which don't take `Functor` parameter, for example, a type constructor `F` with kind `F :: (Nat -> Type) -> Nat -> Type`.
+  This package avoids the neccesity of the workaround by admitting the restriction that the parameter of `FFunctor` must always be a `Functor`.
+  Therefore, `FFunctor` gives up instances which don't take `Functor` parameter, for example, a type constructor `F` with kind `F :: (Nat -> Type) -> Nat -> Type`.
 
 * From [functor-combinators](https://hackage.haskell.org/package/functor-combinators-0.4.1.2): `HFunctor`, `Inject`, `HBind`
 

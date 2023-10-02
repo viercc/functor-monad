@@ -7,10 +7,13 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE KindSignatures #-}
 
+-- | Composition of two @FFunctor@
 module FFunctor.FCompose where
 
 import FFunctor
 
+-- | Composision of @FFunctor@s.
+--   Just like any functor, composition of two @FFunctor@ is @FFunctor@ again.
 type FCompose :: FF -> FF -> FF
 newtype FCompose ff gg h x = FCompose {getFCompose :: ff (gg h) x}
   deriving (Show, Eq, Ord, Foldable, Traversable)
@@ -22,7 +25,7 @@ deriving
 instance (FFunctor ff, FFunctor gg) => FFunctor (FCompose ff gg) where
   ffmap gh = FCompose . ffmap (ffmap gh) . getFCompose
 
--- | Infix operator synonym
+-- | Infix type operator for @FCompose@
 type (⊚) = FCompose
 
 infixl 7 ⊚

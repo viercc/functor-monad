@@ -44,7 +44,7 @@ class FFunctor ff => FStrong ff where
   -- These two equations must hold.
   --
   -- @
-  -- fstrength . ffmap 'elim2' = 'elim2'
+  -- ffmap 'elim2' . fstrength  = 'elim2'
   --       :: Day (ff g) 'Data.Functor.Identity.Identity' ~> ff g
   -- fstrength . 'trans1' fstrength = ffmap 'assoc' . fstrength . 'disassoc'
   --       :: Day (Day (ff g) h) k ~> ff (Day (Day g h) k))
@@ -69,7 +69,7 @@ class FFunctor ff => FStrong ff where
   -- >            v                           fstrength                               |
   -- >  ff g ⊗ (h ⊗ k) --------------------------------------------------->  ff (g ⊗ (h ⊗ k))
   --
-  -- For readability, the type constructor @Day@ was replaced to an infix operator @(⊗)@.
+  -- For readability, an infix operator @(⊗) was used instead of the type constructor @Day@.
   fstrength :: (Functor g) => Day (ff g) h ~> ff (Day g h)
   fstrength (Day ffg h op) =
     runCurried (mapCurried (unapplied h)) (fmap op ffg)
