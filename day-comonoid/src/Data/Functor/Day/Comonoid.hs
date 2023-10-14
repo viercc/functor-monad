@@ -5,18 +5,24 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Data.Functor.Day.Comonoid (
+  -- * Comonoid type class
   Comonoid (..), erase1, erase2, duplicateDefault, extendDefault, dayToCompose,
-  -- * Reexport
+  -- * Re-export
   Comonad(..)
   ) where
 
 import Data.Functor.Day
-import Data.Functor.Sum
+import Data.Functor.Sum ( Sum(..) )
+import Data.Functor.Identity (Identity(..))
+
 import Control.Comonad (Comonad(..))
+import Control.Comonad.Trans.Identity (IdentityT(..))
+import Control.Comonad.Env (EnvT(..) )
+import Control.Comonad.Traced (TracedT(..) )
 
 -- | Comonoid with respect to Day convolution.
 --
--- /Laws/:
+-- ==== Laws
 -- 
 -- 'coapply' must satisfy the following equations. Here, @erase1@ and @erase2@
 -- are defined using 'extract' method inherited from 'Comonad'.
@@ -34,6 +40,50 @@ import Control.Comonad (Comonad(..))
 -- 'duplicateDefault' = 'dayToCompose' . coapply
 --                  = 'duplicate'
 -- @
+--
+-- ==== Examples
+-- 
+-- Env comonad, or @(,) e@, is an instance of @Comonoid@.
+--
+-- 
+-- > instance Comonoid ((,) e) where
+-- >   coapply :: forall x. (e, x) -> Day ((,) e) ((,) e) x
+-- >   -- ~ forall x. (e,x) -> ∃b c. ((e,b), (e,c), b -> c -> x)
+-- >   -- ~ forall x. (e,x) -> (e,e, ∃b c.(b, c, b -> c -> x))
+-- >   -- ~ forall x. (e,x) -> (e,e,x)
+-- >   -- ~ e -> (e,e)
+-- >   coapply (e, x) = Day (e, ()) (e, ()) (\_ _ -> x)
+--
+-- Traced comonad, or @((->) m)@, is another example.
+-- 
+-- > instance Monoid m => Comonoid ((->) m) where
+-- >   coapply :: forall x. (m -> x) -> Day ((->) m) ((->) m) x
+-- >   -- ~ forall x. (m -> x) -> ∃b c. (m -> b, m -> c, b -> c -> x)
+-- >   -- ~ forall x. (m -> x) -> (m -> m -> x)
+-- >   -- ~ m -> m -> m
+-- >   coapply f = Day id id (\x y -> f (x <> y))
+--
+-- ==== Non-example
+--
+-- Unlike @Env@ or @Traced@, 'Control.Comonad.Store.Store' comonad can't be an instance of @Comonoid@.
+-- The law requires any lawful @Comonoid f@ to satisfy the following property.
+-- 
+-- * For any value of @f x@, 'coapply' doesn't change the \"shape\" of it. Precisely, for any value @fx :: f x@,
+--   the following equation is true.
+--
+--     > () <$ coapply fx ≡ Day (() <$ fx) (() <$ fx) (\_ _ -> ())@
+-- 
+-- Therefore, any lawful @Comonoid (Store s)@ must satisfy the following equation:
+--
+-- > coapply (store u s0) ≡ Day (store u s0) (store u s0) (\_ _ -> ())
+-- >   where u = const () :: s -> ()
+-- 
+-- But it's incompatible with another requirement that @duplicateDefault@ must be equivalent to @duplicate@ of
+-- the @Comonad (Store s)@ instance.
+--
+-- > duplicateDefault (store u s0) = store (const (store u s0)) s0
+-- > duplicate        (store u s0) = store (\s1 -> store u s1)  s0
+
 class Comonad f => Comonoid f where
   coapply :: f a -> Day f f a
 
@@ -69,19 +119,15 @@ interchange :: Day (Day f f') (Day g g') x -> Day (Day f g) (Day f' g') x
 interchange (Day (Day fa fb ab_x) (Day gc gd cd_y) xy_r) =
   Day (Day fa gc (,)) (Day fb gd (,)) (\(a,c) (b,d) -> xy_r (ab_x a b) (cd_y c d))
 
+instance Comonoid Identity where
+  coapply (Identity a) = Day (Identity ()) (Identity ()) (\_ _ -> a)
+
 instance Comonoid ((,) e) where
   coapply :: forall x. (e, x) -> Day ((,) e) ((,) e) x
-  -- ~ forall x. (e,x) -> ∃b c. ((e,b), (e,c), b -> c -> x)
-  -- ~ forall x. (e,x) -> (e,e, ∃b c.(b, c, b -> c -> x))
-  -- ~ forall x. (e,x) -> (e,e,x)
-  -- ~ e -> (e,e)
   coapply (e, x) = Day (e, ()) (e, ()) (\_ _ -> x)
 
 instance Monoid m => Comonoid ((->) m) where
   coapply :: forall x. (m -> x) -> Day ((->) m) ((->) m) x
-  -- ~ forall x. (m -> x) -> ∃b c. (m -> b, m -> c, b -> c -> x)
-  -- ~ forall x. (m -> x) -> (m -> m -> x)
-  -- ~ m -> m -> m
   coapply f = Day id id (\x y -> f (x <> y))
 
 instance (Comonoid f, Comonoid g) => Comonoid (Sum f g) where
@@ -90,3 +136,13 @@ instance (Comonoid f, Comonoid g) => Comonoid (Sum f g) where
 
 instance (Comonoid f, Comonoid g) => Comonoid (Day f g) where
   coapply = interchange . transBi coapply coapply
+
+instance (Comonoid f) => Comonoid (IdentityT f) where
+  coapply (IdentityT fx) = transBi IdentityT IdentityT (coapply fx)
+
+instance (Comonoid f) => Comonoid (EnvT e f) where
+  coapply (EnvT e fx) = transBi (EnvT e) (EnvT e) (coapply fx)
+
+instance (Monoid m, Comonoid f) => Comonoid (TracedT m f) where
+  coapply (TracedT ft) = case coapply ft of
+    Day fa fb op -> Day (TracedT ((,) <$> fa)) (TracedT ((,) <$> fb)) (\(a, m1) (b, m2) -> op a b (m1 <> m2))

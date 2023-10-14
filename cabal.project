@@ -1,6 +1,7 @@
 packages:
     ./functor-monad/*.cabal
     ./free-applicative-t/*.cabal
+    ./day-comonoid/*.cabal
 
 package *
     documentation: True
