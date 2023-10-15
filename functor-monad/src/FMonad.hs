@@ -12,9 +12,28 @@
 
 module FMonad
   ( type (~>),
-    FFunctor (..),
+    -- * FMonad
+
+    -- | Monad on 'Functor's.
     FMonad (..),
-    fjoin
+    
+    -- * FMonad laws
+
+    -- ** Laws
+    --
+    -- $fmonad_laws_in_fbind
+    
+    -- ** Laws (in terms of @fjoin@)
+    --
+    -- $fmonad_laws_in_fjoin
+    
+    -- | 'join' but for 'FMonad' instead of 'Monad'.
+    fjoin,
+    
+    -- $fmonad_laws
+    
+    -- * Re-export
+    FFunctor (..)
   )
 where
 
@@ -45,33 +64,67 @@ import FFunctor
 import qualified Data.Bifunctor.Product as Bi
 import qualified Data.Bifunctor.Product.Extra as Bi
 
--- | Monad on 'Functor's.
---
--- FMonad laws:
---
--- [fpure is natural in g]
---
---    For all @Functor g@, @Functor h@, and @n :: g ~> h@,
---
---    > ffmap n . fpure = fpure . n
---
--- [fjoin is natural in g]
---
---    For all @Functor g@, @Functor h@, and @n :: g ~> h@,
---
---    > ffmap n . fjoin = fjoin . ffmap (ffmap n)
---
--- [Left unit]
---
---    > fjoin . fpure = id
---
--- [Right unit]
---
---    > fjoin . fmap fpure = id
---
--- [Associativity]
---
---    > fjoin . fjoin = fjoin . ffmap fjoin
+
+{- $fmonad_laws_in_fbind
+
+Like 'Monad', there is a set of laws which every instance of 'FMonad' should satisfy.
+
+[fpure is natural in g]
+
+   Let @g, h@ be arbitrary @Functor@s. For any natural transformation @n :: g ~> h@,
+
+   > ffmap n . fpure = fpure . n
+
+[fbind is natural in g,h]
+
+   Let @g, g', h, h'@ be arbitrary @Functor@s. For all natural transformations
+   @k :: g ~> ff h@, @nat_g :: g' ~> g@, and @nat_h :: h ~> h'@, the following holds.
+
+   > fbind (ffmap nat_h . k . nat_g) = ffmap nat_h . fbind k . ffmap nat_g
+
+[Left unit]
+
+   > fbind k . fpure = k
+
+[Right unit]
+
+   > fbind fpure = id
+
+[Associativity]
+
+   > fbind k . fbind j = fbind (fbind k . j)
+-}
+
+{- $fmonad_laws_in_fjoin
+
+Alternatively, 'FMonad' laws can be stated using 'fjoin' instead. 
+
+[fpure is natural in g]
+
+   For all @Functor g@, @Functor h@, and @n :: g ~> h@,
+
+   > ffmap n . fpure = fpure . n
+
+[fjoin is natural in g]
+
+   For all @Functor g@, @Functor h@, and @n :: g ~> h@,
+
+   > ffmap n . fjoin = fjoin . ffmap (ffmap n)
+
+[Left unit]
+
+   > fjoin . fpure = id
+
+[Right unit]
+
+   > fjoin . ffmap fpure = id
+
+[Associativity]
+
+   > fjoin . fjoin = fjoin . ffmap fjoin
+
+-}
+
 class FFunctor ff => FMonad ff where
   fpure :: (Functor g) => g ~> ff g
   fbind :: (Functor g, Functor h) => (g ~> ff h) -> ff g a -> ff h a
