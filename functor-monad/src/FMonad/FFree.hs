@@ -11,7 +11,6 @@
 module FMonad.FFree where
 
 import Data.Functor.Day (Day (..), day, dap)
-import Data.Functor.Identity
 import FFunctor
 import FMonad
 import FStrong
