@@ -1,5 +1,5 @@
 # Revision history for day-comonoid
 
-## 0.1 -- YYYY-mm-dd
+## 0.1 -- 2023-10-15
 
-* First version. Released on an unsuspecting world.
+* First version.

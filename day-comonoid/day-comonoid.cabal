@@ -1,13 +1,19 @@
 cabal-version:      2.2
 name:               day-comonoid
 version:            0.1
-synopsis:           A comonoid w.r.t. Day, just like Applicative is monoid w.r.t. Day.
+synopsis:           A comonoid w.r.t. Day
+description:
+  A type class Comonoid to represend a comonoid w.r.t. Day,
+  just like Applicative is a type class of monoid w.r.t. Day.
+
+  See README.md for more information.
 license:            BSD-3-Clause
 license-file:       LICENSE
+homepage:           https://github.com/viercc/functor-monad/tree/main/day-comonoid
 author:             Koji Miyazato
 maintainer:         viercc@gmail.com
 copyright:          Koji Miyazato
-category:           Data
+category:           Data Structures, Comonads, Functors
 build-type:         Simple
 extra-doc-files:    CHANGELOG.md
 extra-source-files: README.md

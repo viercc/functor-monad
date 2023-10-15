@@ -1,5 +1,7 @@
 # day-comonid: The(?) dual of Applicative
 
+![At Hackage](https://img.shields.io/hackage/v/free-applicative-t.svg)
+
 This package provides a type class named `Comonoid`.
 
 ```haskell
