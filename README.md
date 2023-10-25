@@ -1,6 +1,6 @@
 # functor-monad
 
-This repository contains multiple (currently: 2) Haskell packages.
+This repository contains multiple (currently: 3) Haskell packages.
 
 ## free-applicative-t
 
@@ -14,6 +14,20 @@ filling the space in this table:
 |Applicative| [Ap](https://hackage.haskell.org/package/free-5.1.10/docs/Control-Applicative-Free.html#t:Ap) | ??? |
 
 More on [the README of the package itself](free-applicative-t/README.md).
+
+## day-comonoid
+
+The package **day-comonoid** provides a type class named `Comonoid`.
+
+```haskell
+class Comonad f => Comonoid f where
+    coapply :: f a -> Day f f a
+```
+
+The name "Comonoid" should be read in a context. A functor `f` being `Comonoid` means it's a comonoid in the category of `Functor`s
+equipped with [Day](https://hackage.haskell.org/package/kan-extensions-5.2.5/docs/Data-Functor-Day.html) as its tensor product.
+
+`Comonoid` can be seen as "the dual" of `Applicative`, because `Applicative` can be seen as the type class for monoids in that category.
 
 ## functor-monad
 
