@@ -2,6 +2,9 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE DeriveFunctor #-}
 module FMonad.State.Ran
   (StateT(..),
   toInner, fromInner,
@@ -25,6 +28,10 @@ import qualified FMonad.State.Simple.Inner as Simple.Inner
 
 -- type StateT s = AdjointT (Precompose s) (Ran s)
 newtype StateT s mm x a = StateT { runStateT :: forall r. (a -> s r) -> mm (Precompose s x) r }
+  deriving (FFunctor, FMonad) via (AdjointT (Precompose s) (Ran s) mm)
+
+deriving
+  stock instance (FFunctor mm, Functor s) => Functor (StateT s mm x)
 
 fromAdjointT :: AdjointT (Precompose s) (Ran s) mm x ~> StateT s mm x
 fromAdjointT = coerce
