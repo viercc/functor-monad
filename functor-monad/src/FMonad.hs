@@ -16,6 +16,8 @@ module FMonad
 
     -- | Monad on 'Functor's.
     FMonad (..),
+    -- | 'join' but for 'FMonad' instead of 'Monad'.
+    fjoin,
     
     -- * FMonad laws
 
@@ -27,10 +29,6 @@ module FMonad
     --
     -- $fmonad_laws_in_fjoin
     
-    -- | 'join' but for 'FMonad' instead of 'Monad'.
-    fjoin,
-    
-    -- $fmonad_laws
     
     -- * Re-export
     FFunctor (..)
