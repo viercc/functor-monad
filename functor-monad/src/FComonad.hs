@@ -7,6 +7,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators #-}
 
+-- | Comonads in the cateogory of @Functor@s.
 module FComonad
   ( type (~>),
     FFunctor (..),
@@ -28,6 +29,7 @@ import qualified Control.Comonad.Cofree as Cofree
 import FFunctor
 import Data.Coerce (coerce)
 
+-- | @FComonad@ is to 'FFunctor' what 'Comonad' is to 'Functor'.
 class FFunctor ff => FComonad ff where
     fextract :: Functor g => ff g ~> g
     fextend :: (Functor g, Functor h) => (ff g ~> h) -> (ff g ~> ff h)

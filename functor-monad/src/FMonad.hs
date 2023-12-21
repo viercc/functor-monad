@@ -5,18 +5,15 @@
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneKindSignatures #-}
 {-# LANGUAGE TupleSections #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 
+-- | Monads in the cateogory of @Functor@s.
 module FMonad
   ( type (~>),
     -- * FMonad
 
-    -- | Monad on 'Functor's.
     FMonad (..),
-    -- | 'join' but for 'FMonad' instead of 'Monad'.
     fjoin,
     
     -- * FMonad laws
@@ -123,10 +120,36 @@ Alternatively, 'FMonad' laws can be stated using 'fjoin' instead.
 
 -}
 
+{- | @FMonad@ is to 'FFunctor' what 'Monad' is to 'Functor'.
+
+
++----------------+-----------------------------+------------------------------------+
+|                | @'Monad' m@                 | @'FMonad'   mm@                    |
++================+=============================+====================================+
+| Superclass     | @'Functor' m@               | @'FFunctor' mm@                    |
++----------------+-----------------------------+------------------------------------+
+| Features       | @                           | @                                  |
+|                | return = pure               | fpure                              |
+|                |   :: a -> m a               |    :: (Functor g)                  |
+|                | @                           |    => g ~> mm g                    |
+|                |                             | @                                  |
++----------------+-----------------------------+------------------------------------+
+|                | @                           | @                                  |
+|                | (=<<)                       | fbind                              |
+|                |   :: (a -> m b)             |   :: (Functor g, Functor h)        |
+|                |   -> (m a -> m b)           |   => (g ~> mm h)                   |
+|                | @                           |   -> (mm g ~> mm h)                |
+|                |                             | @                                  |
++----------------+-----------------------------+------------------------------------+
+
+
+
+-} 
 class FFunctor ff => FMonad ff where
   fpure :: (Functor g) => g ~> ff g
   fbind :: (Functor g, Functor h) => (g ~> ff h) -> ff g a -> ff h a
 
+-- | 'join' but for 'FMonad' instead of 'Monad'.
 fjoin :: (FMonad ff, Functor g) => ff (ff g) ~> ff g
 fjoin = fbind id
 

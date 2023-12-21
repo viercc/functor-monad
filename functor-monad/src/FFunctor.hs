@@ -7,6 +7,7 @@
 {-# LANGUAGE StandaloneKindSignatures #-}
 {-# LANGUAGE TypeOperators #-}
 
+-- | Functors on the category of @Functor@ s.
 module FFunctor
   ( type (~>),
     FFunctor (..),
@@ -55,43 +56,89 @@ type FUNCTOR = Type -> Type
 -- | The kind of a @FFunctor@.
 type FF = FUNCTOR -> FUNCTOR
 
--- | Endofunctors on the category of 'Functor's
---
--- FFunctor laws:
---
--- [Identity]
---
---    >  ffmap id = id
---
--- [Composition]
---
---    >  ffmap f . ffmap g = ffmap (f . g)
---
--- ==== Examples
---
--- @FFunctor@ instance of 'Sum' is defined as below:
---
--- > data Sum f g a = InL (f a) | InR (g a)
--- >
--- > instance (Functor f) => FFunctor (Sum f) where
--- >     ffmap :: (Functor g, Functor h) => (g ~> h) -> (Sum f g x -> Sum f h x)
--- >     ffmap gh fgx = case fgx of
--- >         InL fx -> InL fx
--- >         InR gx -> InR (gh gx)
---
--- Which can be said  @Functor (Either a)@ but each component is a @Functor@.
---
--- ==== @ContT@ is not an instance of @FFunctor@
---
--- @'Control.Monad.Trans.Cont.ContT' r@ has the kind matching to @FFunctor@, that is, taking a type constructor
--- @m :: Type -> Type@ and make @ContT r m :: Type -> Type@. But there can't be an instance @FFunctor (ContT r)@,
--- because @ContT r m@ uses @m@ in both positive and negative positions.
---
--- > newtype ContT r m a = ContT {
--- >     runContT :: (a -> m r) -> m r
--- >     --                ^       ^ positive position
--- >     --                | negative position
--- >   }
+{- | Endofunctors on the category of 'Functor's.
+
++----------------+-----------------------------+------------------------------------+
+|                | @'Functor' f@               | @'FFunctor' ff@                    |
++================+=============================+====================================+
+| Takes          | A type @a@                  | A @Functor g@                      |
++----------------+-----------------------------+------------------------------------+
+| Makes          | A type @f a@                | A @Functor (ff g)@                 |
++----------------+-----------------------------+------------------------------------+
+| Feature        | @                           | @                                  |
+|                | fmap                        | ffmap                              |
+|                |   :: (a -> b) -> f a -> f b |    :: (Functor g, Functor h)       |
+|                | @                           |    => (g ~> h) -> (ff g ~> ff h)   |
+|                |                             | @                                  |
++----------------+-----------------------------+------------------------------------+
+
+FFunctor laws:
+
+[Identity]
+
+   >  ffmap id = id
+
+[Composition]
+
+   >  ffmap f . ffmap g = ffmap (f . g)
+
+==== Examples
+
+This is the @FFunctor@ instance of @'Sum' f@.
+Just like the 'fmap' from @Functor (Either a)@ instance which applies a function to the \"Right\" value,
+@ffmap@ applies @gh :: g ~> h@ to the @InR (g a)@ value.
+
+@
+data Sum f g a = InL (f a) | InR (g a)
+instance (Functor f) => FFunctor (Sum f) where
+    ffmap gh fgx = case fgx of
+        InL fx -> InL fx
+        InR gx -> InR (gh gx)
+@
+
+Like @Sum f@, some instances of @FFunctor@ are modified @Functor@s in such a way that
+its parameter is swapped for @g a@.
+But not every instance of @FFunctor@ is like this. The following data type @Foo g a@
+is a @FFunctor@ which uses a @Functor g@ and a type parameter @a@ separately.
+
+@
+data Foo g a = Foo (String -> a) (g String)
+
+instance Functor (Foo g) where
+  fmap :: (a -> b) -> Foo g a -> Foo g b
+  fmap f (Foo strToA gStr) = Foo (f . strToA) gStr
+
+instance FFunctor Foo where
+  ffmap :: (g ~> h) -> Foo g a -> Foo h a
+  ffmap gh (Foo strToA gStr) = Foo strToA (gh gStr)
+@
+
+An @FFunctor@ instance can use its @Functor@ parameter nested. The following @Bar g a@ example uses
+@g@ nested twice.
+
+@
+newtype Bar g a = Bar (g (g a))
+
+instance Functor g => Functor (Bar g) where
+  fmap f (Bar gga) = Bar $ fmap (fmap f gga)
+
+instance FFunctor Bar where
+  ffmap gh (Bar gga) = Bar $ fmap gh (gh gga)
+@
+
+==== Non-example
+
+@'Control.Monad.Trans.Cont.ContT' r@ has the right kind to be an @FFunctor@, that is,
+@(Type -> Type) -> Type -> Type@. But there can be no instances of @FFunctor (ContT r)@,
+because @ContT r m@ uses @m@ in negative position.
+
+> newtype ContT r m a = ContT {
+>     runContT :: (a -> m r) -> m r
+>     --                ^       ^ positive position
+>     --                | negative position
+>   }
+
+-}
 type FFunctor :: FF -> Constraint
 class (forall g. Functor g => Functor (ff g)) => FFunctor ff where
   ffmap :: (Functor g, Functor h) => (g ~> h) -> (ff g x -> ff h x)

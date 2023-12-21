@@ -7,7 +7,7 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE KindSignatures #-}
 
--- | Composition of two @FFunctor@
+-- | Composition of two @FFunctor@s
 module FFunctor.FCompose where
 
 import FFunctor

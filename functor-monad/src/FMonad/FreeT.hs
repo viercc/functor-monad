@@ -24,19 +24,18 @@ import Data.Functor.Classes
 import FMonad
 import Control.Monad.Trans.Class (MonadTrans)
 
-type OriginalFreeT = Original.FreeT
-
 -- | @FreeT f@ is 'FMonad' for any @Functor f@.
 --   
---   Due to a historical reason, the original 'Original.FreeT' type requires @Monad m@
---   to be a @Functor@ itself (in other words, to have @Functor (FreeT f m)@ instance.)
---   That blocks @FreeT f@ becomes a @FFunctor@. The @FreeT@ type this module exports is
---   a thin wrapper around the original, \"fix\"ing its @Functor@ instance.
+--   For backward compatibility reasons, the original 'Original.FreeT' type requires @Monad m@
+--   to have a @Functor (FreeT f m)@ instance, even though @Functor m@ is sufficient.
+--   This over-restriction prevents @FFunctor@ instance of @FreeT f@ to exist.
+--
+--   The @FreeT@ type (which this module defines) is
+--   a thin wrapper around the original, defining its own @Functor@ instance along with
+--   the @FFunctor@ and @FMonad@ instances.
 --   
 -- @
--- import Control.Monad.Trans.Free as Original
--- 
--- instance (Functor f, Monad m)   => Functor (Original.FreeT f m)
+-- instance (Functor f, Monad m)   => Functor ('OriginalFreeT' f m)
 -- instance (Functor f, Functor m) => Functor (FreeT f m)
 -- instance (Functor f) => FFunctor (FreeT f)
 -- @
@@ -60,22 +59,25 @@ newtype FreeT f m b = WrapFreeT {unwrapFreeT :: OriginalFreeT f m b}
     (Show, Read, Eq, Ord)
     via (Original.FreeT f m b)
 
+-- | Type synonym for the original 'Original.FreeT' type
+type OriginalFreeT = Original.FreeT
+
 liftF :: (Functor f, Monad m) => f a -> FreeT f m a
 liftF fa = WrapFreeT (Original.liftF fa)
 
--- | @FreeT'@ is a @FreeT@ but its arguments are flipped.
+-- | @FreeT'@ is a @FreeT@, but with the order of its arguments flipped.
 --
 -- @
 -- FreeT' m f a ≡ FreeT f m a
 -- @
 --   
--- @FreeT' m@ is a @FFunctor@ and @FMonad@ evidenced by these existing functions,
--- specialized for the purpose.
+-- @FreeT' m@ is both @FFunctor@ and @FMonad@, evidenced by these functions.
 --   
 -- @
--- 'Original.transFreeT' :: (Functor g, Functor m) => (f ~> g) -> FreeT f m ~> FreeT g m
+-- -- Types are specialized to match the type of FFunctor and FMonad methods
+-- 'Original.transFreeT' :: (Functor g, Monad m) => (f ~> g) -> FreeT f m ~> FreeT g m
 -- 'Original.liftF' :: (Functor f, Monad m) => f ~> FreeT f m
--- 'Original.foldFreeT' id :: (Functor f, Monad m) => FreeT (FreeT f m) m ~> FreeT f m 
+-- 'Original.foldFreeT' :: (Functor f, Functor g, Monad m) => (f ~> FreeT g m) -> FreeT f m ~> FreeT g m 
 -- @
 newtype FreeT' m f b = WrapFreeT' {unwrapFreeT' :: OriginalFreeT f m b}
   deriving

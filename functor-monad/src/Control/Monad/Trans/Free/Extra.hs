@@ -2,6 +2,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators #-}
 
+-- | Various utility functions on 'FreeT'
 module Control.Monad.Trans.Free.Extra where
 
 import Control.Arrow ((>>>))

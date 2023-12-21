@@ -1,6 +1,7 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeOperators #-}
 
+-- | 'FFunctor' with tensorial strength with respect to 'Day'.
 module FStrong where
 
 import Data.Coerce (coerce)
@@ -23,7 +24,7 @@ import Control.Comonad.Env (EnvT(..))
 import Control.Comonad.Traced (TracedT(..))
 import Control.Comonad.Store (StoreT (..))
 
--- | 'FFunctor' with tensorial strength (with respect to 'Day').
+-- | 'FFunctor' with tensorial strength with respect to 'Day'.
 class FFunctor ff => FStrong ff where
   {-# MINIMAL fstrength | mapCurried #-}
 
@@ -76,15 +77,23 @@ class FFunctor ff => FStrong ff where
 
   -- | Internal 'ffmap'.
   --
-  -- 'mapCurried' can be seen as @ffmap@ but by using @'Curried' g h@ in place of @g ~> h@.
+  -- 'mapCurried' can be seen as @ffmap@ but by using "internal language" of
+  -- \(\mathrm{Hask}^{\mathrm{Hask}}\), the category of @Functor@s.
   --
   -- @
   -- ffmap         :: (g ~> h)       ->  (ff g ~> ff h)
   -- mapCurried    :: (Curried g h)  ~>  (Curried (ff g) (ff h))
   -- @
   --
-  -- The existence of 'mapCurried', an \"internal fmap\", is known to be equivalent to the existence of
-  -- the 'fstrength'.
+  -- @ffmap@ takes a natural transformations @(~>)@, in other words morphism in \(\mathrm{Hask}^{\mathrm{Hask}}\),
+  -- and returns another @(~>)@. @ffmap@ itself is an usual function, which is an outsider for
+  -- \(\mathrm{Hask}^{\mathrm{Hask}}\).
+  --
+  -- On the other hand, @mapCurried@ is a natural transformation @(~>)@ between @Curried _ _@,
+  -- objects of \(\mathrm{Hask}^{\mathrm{Hask}}\).
+  -- 
+  -- The existence of 'mapCurried' is known to be equivalent to the existence of
+  -- 'fstrength'.
   --
   -- ==== Laws
   --
@@ -103,12 +112,13 @@ class FFunctor ff => FStrong ff where
 fstrength' :: (FStrong ff, Functor h) => Day g (ff h) ~> ff (Day g h)
 fstrength' = ffmap swapped . fstrength . swapped
 
+-- | Combine an applicative action(s) inside @ff@ to another action @h a@.
 innerAp :: (FStrong ff, Applicative h) => ff h (a -> b) -> h a -> ff h b
 innerAp ffh h = ffmap dap $ fstrength (day ffh h)
 
 -- | Cf. 'Control.Monad.ap'
-fap :: (FStrong mm, FMonad mm, Applicative h) => mm h (a -> b) -> mm h a -> mm h b
-fap x y = ffmap dap . fjoin . ffmap fstrength' . fstrength $ day x y
+fap :: (FStrong mm, FMonad mm, Functor g, Functor h) => Day (mm g) (mm h) ~> mm (Day g h)
+fap = fjoin . ffmap fstrength' . fstrength
 
 instance FStrong IdentityT where
   fstrength = coerce

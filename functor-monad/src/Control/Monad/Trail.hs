@@ -10,7 +10,7 @@ import Control.Monad (ap)
 import Data.Bifunctor
 import FMonad
 
--- | @Trail mm@ is a 'Monad' for any @'FMonad' mm@.
+-- | For any @'FMonad' mm@, @Trail mm@ is a 'Monad'.
 --
 -- ==== Example
 --
