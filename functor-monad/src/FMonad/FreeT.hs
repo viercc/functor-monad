@@ -1,32 +1,30 @@
-{-# LANGUAGE DeriveTraversable #-}
-{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeOperators #-}
 
 -- | 'Original.FreeT' is a 'FMonad' in two different ways
 module FMonad.FreeT
-  ( module FMonad,
-    FreeT (..),
-    FreeT' (..),
+  ( OriginalFreeT,
+    FreeT (..), liftF,
+    FreeT' (..), liftM',
   )
 where
 
 import Control.Applicative (Alternative)
 import Control.Monad (MonadPlus)
-import Control.Monad.Trans.Free hiding (FreeT ())
+import Control.Monad.Trans.Free hiding (FreeT (), liftF)
 import qualified Control.Monad.Trans.Free as Original
 import Control.Monad.Trans.Free.Extra
 import Data.Functor.Classes
 import FMonad
+import Control.Monad.Trans.Class (MonadTrans)
+
+type OriginalFreeT = Original.FreeT
 
 -- | @FreeT f@ is 'FMonad' for any @Functor f@.
 --   
@@ -42,7 +40,7 @@ import FMonad
 -- instance (Functor f, Functor m) => Functor (FreeT f m)
 -- instance (Functor f) => FFunctor (FreeT f)
 -- @
-newtype FreeT f m b = WrapFreeT {unwrapFreeT :: Original.FreeT f m b}
+newtype FreeT f m b = WrapFreeT {unwrapFreeT :: OriginalFreeT f m b}
   deriving
     ( Applicative,
       Alternative,
@@ -56,8 +54,14 @@ newtype FreeT f m b = WrapFreeT {unwrapFreeT :: Original.FreeT f m b}
     )
     via (Original.FreeT f m)
   deriving
+    ( MonadTrans )
+    via (Original.FreeT f)
+  deriving
     (Show, Read, Eq, Ord)
     via (Original.FreeT f m b)
+
+liftF :: (Functor f, Monad m) => f a -> FreeT f m a
+liftF fa = WrapFreeT (Original.liftF fa)
 
 -- | @FreeT'@ is a @FreeT@ but its arguments are flipped.
 --
@@ -73,7 +77,7 @@ newtype FreeT f m b = WrapFreeT {unwrapFreeT :: Original.FreeT f m b}
 -- 'Original.liftF' :: (Functor f, Monad m) => f ~> FreeT f m
 -- 'Original.foldFreeT' id :: (Functor f, Monad m) => FreeT (FreeT f m) m ~> FreeT f m 
 -- @
-newtype FreeT' m f b = WrapFreeT' {unwrapFreeT' :: Original.FreeT f m b}
+newtype FreeT' m f b = WrapFreeT' {unwrapFreeT' :: OriginalFreeT f m b}
   deriving
     (Functor)
     via (FreeT f m)
@@ -92,6 +96,9 @@ newtype FreeT' m f b = WrapFreeT' {unwrapFreeT' :: Original.FreeT f m b}
   deriving
     (Show, Read, Eq, Ord)
     via (Original.FreeT f m b)
+
+liftM' :: Functor m => m a -> FreeT' m f a
+liftM' ma = WrapFreeT' (inr ma)
 
 instance (Functor m, Functor f) => Functor (FreeT m f) where
   fmap f = WrapFreeT . fmapFreeT_ f . unwrapFreeT
