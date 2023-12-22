@@ -45,6 +45,7 @@ import Control.Comonad.Env (EnvT(..))
 import Control.Comonad.Traced (TracedT(..))
 import Control.Comonad.Store (StoreT (..))
 import Control.Comonad.Cofree (Cofree, hoistCofree)
+import Control.Monad.Trans.Free (FreeT, hoistFreeT)
 
 -- | Natural transformation arrow
 type (~>) :: (k -> Type) -> (k -> Type) -> Type
@@ -194,6 +195,9 @@ instance Functor f => FFunctor (Curried f) where
 
 instance FFunctor (FreeApT.ApT f) where
   ffmap = FreeApT.hoistApT
+
+instance Functor f => FFunctor (FreeT f) where
+  ffmap = hoistFreeT
 
 instance Functor g => FFunctor (Flip1 FreeApT.ApT g) where
   ffmap f2g = Flip1 . FreeApT.transApT f2g . unFlip1

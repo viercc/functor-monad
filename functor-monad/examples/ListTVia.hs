@@ -14,11 +14,10 @@
 module Main(main) where
 
 import Data.Kind ( Type )
-import Control.Monad.Trans.Class
-import qualified Control.Monad.Trans.Free as Original
 
 import Data.Monoid (Ap(..))
-
+import Control.Monad.Trans.Class
+import Control.Monad.Trans.Free
 import FMonad.FreeT
 import Control.Monad.Trail
 
@@ -34,7 +33,7 @@ ListT instances and -XDerivingVia: https://www.reddit.com/r/haskell/comments/i76
 -}
 
 type    ListT :: (Type -> Type) -> (Type -> Type)
-newtype ListT m a = ListT { runListT :: Original.FreeT ((,) a) m () }
+newtype ListT m a = ListT { runListT :: FreeT ((,) a) m () }
     deriving stock (Eq, Ord, Show, Read)
     deriving (Functor, Applicative, Monad)
         via (Trail (FreeT' m))
@@ -43,11 +42,11 @@ newtype ListT m a = ListT { runListT :: Original.FreeT ((,) a) m () }
 
 -- MonadTrans is specific to ListT
 instance MonadTrans ListT where
-  lift ma = ListT $ lift ma >>= \a -> Original.liftF (a, ())
+  lift ma = ListT $ lift ma >>= \a -> liftF (a, ())
 
 -- For test:
 forEach :: Monad m => ListT m a -> (a -> m ()) -> m ()
-forEach as f = Original.iterT (\(a, m) -> f a >> m) . runListT $ as
+forEach as f = iterT (\(a, m) -> f a >> m) . runListT $ as
 
 test1, test2, test3 :: ListT IO Int
 test1 = lift (putStrLn "SideEffect: A") >> mempty

@@ -7,15 +7,7 @@ module Control.Monad.Trans.Free.Extra where
 
 import Control.Arrow ((>>>))
 import Control.Monad.Trans.Free
-import Data.Bifunctor
 import FFunctor (type (~>))
-
--- Sadly, Functor (FreeT m f) uses liftM instead of fmap,
--- meaning (Monad m, Functor f) => Functor (FreeT f m).
--- Maybe that was for backward compatibility,
--- but I want (Functor f, Functor m) => ...
-fmapFreeT_ :: (Functor f, Functor m) => (a -> b) -> FreeT f m a -> FreeT f m b
-fmapFreeT_ f = let go = FreeT . fmap (bimap f go) . runFreeT in go
 
 ffmapFreeF :: forall f g a. (f ~> g) -> FreeF f a ~> FreeF g a
 ffmapFreeF _ (Pure a) = Pure a
@@ -52,34 +44,23 @@ eitherFreeT_ nt1 nt2 = go
           Pure a -> return a
           Free fm -> nt1 fm >>= go
 
-fconcatFreeT_ :: forall f m. (Functor f, Functor m) => FreeT f (FreeT f m) ~> FreeT f m
-fconcatFreeT_ = outer
-  where
-    -- type T = FreeT f
-    -- type F = FreeF f
-    --
-    --
-    -- runFreeT :: T m x -> m (F x (T m x))
+caseFreeF :: (a -> r) -> (f b -> r) -> FreeF f a b -> r
+caseFreeF pureCase freeCase freef = case freef of
+  Pure a -> pureCase a
+  Free fb -> freeCase fb
 
-    outer :: forall a. FreeT f (FreeT f m) a -> FreeT f m a
-    outer =
-      -- T (T m) a
-      runFreeT
-        >>> fmapFreeT_ (fmap outer) -- T m (F a (T (T m) a))
-        >>> inner -- T m (F a (T m a))
-        -- T m a
-    inner :: forall a. FreeT f m (FreeF f a (FreeT f m a)) -> FreeT f m a
+fbindFreeT_ :: forall f m n a. (Functor f, Functor m, Functor n) => (m ~> FreeT f n) -> FreeT f m a -> FreeT f n a
+fbindFreeT_ k = outer
+  where
+    outer :: FreeT f m a -> FreeT f n a
+    outer = runFreeT >>> k >>> inner
+
+    inner :: FreeT f n (FreeF f a (FreeT f m a)) -> FreeT f n a
     inner =
       -- T m (F a (T m a))
       runFreeT
-        >>> fmap step -- m (F (F a (T m a)) (T m (F a (T m a))))
-        >>> FreeT -- m (F a (T m a))
+        >>> fmap (caseFreeF (caseFreeF Pure (Free . fmap outer)) (Free . fmap inner))
+        >>> FreeT
 
-    -- F a b = a + f b
-    --
-    -- step :: a + f (T m a) + f (T m (a + f (T m a))) -> a + f (T m a)
-    --                            ^^^^^^^^^^^^^^^^^^^ input of inner
-    step :: forall a. FreeF f (FreeF f a (FreeT f m a)) (FreeT f m (FreeF f a (FreeT f m a))) -> FreeF f a (FreeT f m a)
-    step (Pure (Pure a)) = Pure a
-    step (Pure (Free ft)) = Free ft
-    step (Free fRec) = Free (fmap inner fRec)
+fconcatFreeT_ :: forall f m. (Functor f, Functor m) => FreeT f (FreeT f m) ~> FreeT f m
+fconcatFreeT_ = fbindFreeT_ id

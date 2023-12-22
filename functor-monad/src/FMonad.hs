@@ -32,14 +32,18 @@ module FMonad
   )
 where
 
+import Control.Comonad (Comonad (..), (=>=))
+import Control.Monad (join)
+
 import qualified Control.Applicative.Free as FreeAp
 import qualified Control.Applicative.Free.Final as FreeApFinal
 import Control.Applicative.Lift
 import qualified Control.Applicative.Trans.FreeAp as FreeApT
-import Control.Comonad (Comonad (..), (=>=))
-import Control.Monad (join)
 import qualified Control.Monad.Free as FreeM
 import qualified Control.Monad.Free.Church as FreeMChurch
+import Control.Monad.Trans.Free (FreeT)
+import Control.Monad.Trans.Free.Extra ( inr, fbindFreeT_ )
+
 import Control.Monad.Trans.Identity
 import Control.Monad.Trans.Reader
 import Control.Monad.Trans.State
@@ -367,6 +371,10 @@ instance FMonad (FreeApT.ApT f) where
 instance Applicative g => FMonad (Flip1 FreeApT.ApT g) where
   fpure = Flip1 . FreeApT.liftF
   fbind k = Flip1 . FreeApT.foldApT (unFlip1 . k) FreeApT.liftT . unFlip1
+
+instance Functor f => FMonad (FreeT f) where
+  fpure = inr
+  fbind = fbindFreeT_
 
 instance (FMonad ff, FMonad gg) => FMonad (Bi.Product ff gg) where
   fpure h = Bi.Pair (fpure h) (fpure h)
