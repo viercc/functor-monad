@@ -10,8 +10,8 @@
 -- | 'Original.FreeT' is a 'FMonad' in two different ways
 module FMonad.FreeT
   ( OriginalFreeT,
-    FreeT (..), liftF,
-    FreeT' (..), liftM',
+    FreeT (..), liftF, liftM,
+    FreeT' (..), liftF', liftM',
   )
 where
 
@@ -59,11 +59,20 @@ newtype FreeT f m b = WrapFreeT {unwrapFreeT :: OriginalFreeT f m b}
     (Show, Read, Eq, Ord)
     via (Original.FreeT f m b)
 
--- | Type synonym for the original 'Original.FreeT' type
+-- | Type synonym for the original 'Original.FreeT' type.
 type OriginalFreeT = Original.FreeT
 
+-- | Lift of the Functor side.
 liftF :: (Functor f, Monad m) => f a -> FreeT f m a
 liftF fa = WrapFreeT (Original.liftF fa)
+
+-- | Lift of the Monad side.
+-- 
+-- @
+-- liftM = fpure
+-- @
+liftM :: (Functor m) => m a -> FreeT f m a
+liftM = WrapFreeT . inr
 
 -- | @FreeT'@ is a @FreeT@, but with the order of its arguments flipped.
 --
@@ -99,8 +108,17 @@ newtype FreeT' m f b = WrapFreeT' {unwrapFreeT' :: OriginalFreeT f m b}
     (Show, Read, Eq, Ord)
     via (Original.FreeT f m b)
 
+-- | Lift of the Functor side.
+--
+-- @
+-- liftF' = fpure
+-- @
+liftF' :: (Functor f, Monad m) => f a -> FreeT' m f a
+liftF' = fpure
+
+-- | Lift of the Monad side.
 liftM' :: Functor m => m a -> FreeT' m f a
-liftM' ma = WrapFreeT' (inr ma)
+liftM' = WrapFreeT' . inr
 
 instance (Functor m, Functor f) => Functor (FreeT m f) where
   fmap f = WrapFreeT . fmapFreeT_ f . unwrapFreeT

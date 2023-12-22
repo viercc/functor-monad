@@ -1,14 +1,14 @@
 cabal-version:       3.0
 name:                functor-monad
 synopsis:
-  Functors and monads on Functor category
+  Functors and monads on the category of Functors
 version:             0.1.0.0
 license:             BSD-3-Clause
 license-file:        LICENSE
 author:              Koji Miyazato
 category:            Monads, Comonads, Functors
 maintainer:          Koji Miyazato <viercc@gmail.com>
-copyright:           2018-2022 Koji Miyazato
+copyright:           2018-2023 Koji Miyazato
 build-type:          Simple
 extra-doc-files:     CHANGELOG.md, README.md
 

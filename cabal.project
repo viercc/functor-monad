@@ -3,7 +3,11 @@ packages:
     ./free-applicative-t/*.cabal
     ./day-comonoid/*.cabal
 
+program-options
+    ghc-options: -Werror
+    haddock-options: --no-print-missing-docs
+
 package *
-    documentation: True
     haddock-hyperlink-source: True
-    haddock-html-location: http://hackage.haskell.org/packages/archive/$pkg/latest/doc/html
+    documentation: True
+    haddock-html-location: http://hackage.haskell.org/packages/archive/$pkg/$version/doc/html

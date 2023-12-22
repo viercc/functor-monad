@@ -45,6 +45,13 @@ instance (FStrong ff) => FStrong (FFree ff) where
     FPure g -> FPure (Day g h op)
     FFree ffr -> FFree (ffmap fstrength $ fstrength (Day ffr h op))
 
+fffmap :: forall ff gg h.
+     (FFunctor ff, FFunctor gg, Functor h)
+  => (forall h'. (Functor h') => ff h' ~> gg h')
+  -> (FFree ff h ~> FFree gg h)
+fffmap _ (FPure hx) = FPure hx
+fffmap t (FFree ffm) = FFree $ ffmap (fffmap t) (t ffm)
+
 -- | Iteratively fold a @FFree@ term down, given a way to fold one layer of @ff@. 
 iter :: forall ff g. (FFunctor ff, Functor g) => (ff g ~> g) -> FFree ff g ~> g
 iter step = go
