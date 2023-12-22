@@ -11,6 +11,7 @@ maintainer:          Koji Miyazato <viercc@gmail.com>
 copyright:           2018-2023 Koji Miyazato
 build-type:          Simple
 extra-doc-files:     CHANGELOG.md, README.md
+tested-with:         GHC ==9.4.8, GHC ==9.6.3, GHC ==9.8.1
 
 library
   hs-source-dirs:  src
@@ -43,11 +44,11 @@ library
     Data.Bifunctor.Product.Extra,
     Control.Monad.Trans.Free.Extra
   build-depends:
-    base >= 4.10 && < 5,
+    base >= 4.16 && < 5,
     adjunctions >= 4.4.2 && < 4.5,
     comonad >= 5.0.8 && < 5.1,
     transformers >= 0.6.1 && < 0.7,
-    free >= 5.1.10 && < 5.2,
+    free >= 5.1.10 && < 5.3,
     bifunctors >= 5.6.1 && < 5.7,
     auto-lift-classes >= 1.0.1 && < 1.2,
     kan-extensions >= 5 && < 5.3,
