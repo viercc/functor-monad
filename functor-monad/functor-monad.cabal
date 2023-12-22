@@ -1,7 +1,12 @@
 cabal-version:       3.0
 name:                functor-monad
 synopsis:
-  Functors and monads on the category of Functors
+  FFunctor: functors on (the usual) Functors
+description:
+  @FFunctor@ is a type class for endofunctors on the category of @Functor@s.
+
+  @FMonad@ is a type class for monads in the category of @Functor@s.
+
 version:             0.1.0.0
 license:             BSD-3-Clause
 license-file:        LICENSE
@@ -9,6 +14,8 @@ author:              Koji Miyazato
 category:            Monads, Comonads, Functors
 maintainer:          Koji Miyazato <viercc@gmail.com>
 copyright:           2018-2023 Koji Miyazato
+homepage:            https://github.com/viercc/functor-monad/tree/main/functor-monad
+bug-reports:         https://github.com/viercc/functor-monad/issue
 build-type:          Simple
 extra-doc-files:     CHANGELOG.md, README.md
 tested-with:         GHC ==9.4.8, GHC ==9.6.3, GHC ==9.8.1
