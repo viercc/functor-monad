@@ -1,6 +1,6 @@
 # day-comonid: The(?) dual of Applicative
 
-![At Hackage](https://img.shields.io/hackage/v/free-applicative-t.svg)
+[![At Hackage](https://img.shields.io/hackage/v/day-comonoid.svg)](https://hackage.haskell.org/package/day-comonoid)
 
 This package provides a type class named `Comonoid`.
 
