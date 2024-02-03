@@ -7,6 +7,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE DerivingVia #-}
 
 -- | Monads in the cateogory of @Functor@s.
 module FMonad
@@ -62,6 +64,8 @@ import FFunctor
 
 import qualified Data.Bifunctor.Product as Bi
 import qualified Data.Bifunctor.Product.Extra as Bi
+import GHC.Generics
+import Data.Kind (Type)
 
 
 {- $fmonad_laws_in_fbind
@@ -171,6 +175,29 @@ instance (Functor f, forall a. Monoid (f a)) => FMonad (Product f) where
 instance Monad f => FMonad (Compose f) where
   fpure = Compose . return
   fbind k = Compose . (>>= (getCompose . k)) . getCompose
+
+instance Functor f => FMonad ((:+:) f) where
+  fpure = R1
+  fbind k ff = case ff of
+    L1 fx -> L1 fx
+    R1 gx -> k gx
+
+instance (Functor f, forall a. Monoid (f a)) => FMonad ((:*:) f) where
+  fpure = (mempty :*:)
+  fbind k (fa :*: ga) = case k ga of
+    fa' :*: ha -> (fa <> fa') :*: ha
+
+deriving
+  via (Compose (f :: Type -> Type))
+  instance Monad f => FMonad ((:.:) f)
+
+deriving
+  via IdentityT
+  instance FMonad (M1 c m) 
+
+deriving
+  via IdentityT
+  instance FMonad Rec1
 
 instance FMonad Lift where
   fpure = Other

@@ -6,6 +6,8 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE StandaloneKindSignatures #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE DerivingVia #-}
 
 -- | Functors on the category of @Functor@ s.
 module FFunctor
@@ -46,6 +48,13 @@ import Control.Comonad.Traced (TracedT(..))
 import Control.Comonad.Store (StoreT (..))
 import Control.Comonad.Cofree (Cofree, hoistCofree)
 import Control.Monad.Trans.Free (FreeT, hoistFreeT)
+
+import GHC.Generics
+    ( Rec1(..),
+      M1(..),
+      type (:+:)(..),
+      type (:*:)(..),
+      type (:.:)(..) )
 
 -- | Natural transformation arrow
 type (~>) :: (k -> Type) -> (k -> Type) -> Type
@@ -153,6 +162,25 @@ instance Functor f => FFunctor (Product f) where
 
 instance Functor f => FFunctor (Compose f) where
   ffmap gh = Compose . fmap gh . getCompose
+
+instance Functor f => FFunctor ((:+:) f) where
+  ffmap _ (L1 fa) = L1 fa
+  ffmap gh (R1 ga) = R1 (gh ga)
+
+instance Functor f => FFunctor ((:*:) f) where
+  ffmap gh (fa :*: ga) = fa :*: gh ga
+
+deriving
+  via (Compose (f :: Type -> Type))
+  instance Functor f => FFunctor ((:.:) f)
+
+deriving
+  via IdentityT
+  instance FFunctor (M1 c m) 
+
+deriving
+  via IdentityT
+  instance FFunctor Rec1
 
 instance FFunctor Lift where
   ffmap gh = mapLift gh
