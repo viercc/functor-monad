@@ -47,6 +47,7 @@ library
     Data.Functor.Bicompose,
     Data.Functor.Flip1,
     Data.Functor.Day.Extra,
+    Data.Functor.Exp
   other-modules:
     Data.Bifunctor.Product.Extra,
     Control.Monad.Trans.Free.Extra

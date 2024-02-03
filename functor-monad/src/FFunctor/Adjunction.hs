@@ -40,6 +40,8 @@ import qualified Control.Comonad.Trans.Store as Rank1
 
 import FFunctor
 import FFunctor.FCompose ( FCompose(..) )
+import Data.Functor.Exp
+import GHC.Generics ((:*:))
 
 -- | An adjunction between \(\mathrm{Hask}^{\mathrm{Hask}}\) and \(\mathrm{Hask}^{\mathrm{Hask}}\).
 type Adjunction :: FF -> FF -> Constraint
@@ -141,3 +143,10 @@ instance Adjunction (Rank1.TracedT m) (Rank1.WriterT m) where
 instance Adjunction (Rank1.StoreT s) (Rank1.StateT s) where
     unit gx = Rank1.StateT $ Rank1.StoreT (fmap (,) gx)
     counit (Rank1.StoreT (Rank1.StateT state) s0) = fmap (\(f, m) -> f m) (state s0)
+
+instance Functor f => Adjunction ((:*:) f) (Exp1 f) where 
+  leftAdjunct :: (Functor f, Functor g, Functor h) => ((f :*: g) ~> h) -> g ~> Exp1 f h
+  leftAdjunct = toExp1
+  
+  rightAdjunct :: (Functor f, Functor g, Functor h) => (g ~> Exp1 f h) -> (f :*: g) ~> h
+  rightAdjunct = fromExp1
