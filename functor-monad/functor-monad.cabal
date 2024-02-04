@@ -35,6 +35,8 @@ library
     FMonad.State.Lan,
     FMonad.State.Simple.Inner,
     FMonad.State.Simple.Outer,
+    FMonad.Cont.Curried,
+    FMonad.Cont.Exp,
 
     FStrong,
     
