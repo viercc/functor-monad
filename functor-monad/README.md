@@ -1,7 +1,7 @@
 # functor-monad: Monads on category of Functors
 
 This package provides `FFunctor` and `FMonad`,
-each corresponds to `Functor` and `Monad` but is higher-order.
+each corresponds to `Functor` and `Monad` but higher-order.
 
 |      | a Functor `f`   | a FFunctor `ff` |
 |----|----|----|
@@ -107,11 +107,20 @@ There are packages with very similar type classes, but they are more or less dif
   
 * From [mmorph](https://hackage.haskell.org/package/mmorph-1.2.0): `MFunctor`, `MMonad`
 
-  They are endofunctors on the category of `Monad` and monad homomorphisms. 
-  In other words, if `T` is a `MFunctor`, it takes a `Monad m` and constructs `Monad (T m)`.
+  `MFunctor` is a class for endofunctors on the category of `Monad`s and monad homomorphisms.
+  If `T` is a `MFunctor`, it takes a `Monad m` and constructs `Monad (T m)`,
+  and its `hoist` method takes a *Monad morphism* `m ~> n` and returns a new *Monad morphism* `T m ~> T n`.
 
-  This library is about endofunctors on category of `Functor` and natural transformations,
+  On the other hand, this library is about endofunctors on the category of `Functor`s and natural transformations,
   which are similar but definitely distinct concept.
+
+  For example, `Sum f` in the example above is not an instance of `MFunctor`, since there are no general way to make `Sum f m` a `Monad`
+  for arbitrary `Monad m`.
+
+  ```
+  instance Functor f => FFunctor (Sum f)
+  instance Functor f => MFunctor (Sum f) -- Can be written, but it will violate the requirement to be MFunctor
+  ```
 
 * From [index-core](https://hackage.haskell.org/package/index-core): `IFunctor`, `IMonad`
 
