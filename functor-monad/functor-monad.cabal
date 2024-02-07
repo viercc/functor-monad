@@ -18,7 +18,7 @@ homepage:            https://github.com/viercc/functor-monad/tree/main/functor-m
 bug-reports:         https://github.com/viercc/functor-monad/issue
 build-type:          Simple
 extra-doc-files:     CHANGELOG.md, README.md
-tested-with:         GHC ==9.4.8, GHC ==9.6.3, GHC ==9.8.1
+tested-with:         GHC ==9.4.8, GHC ==9.6.4, GHC ==9.8.1
 
 library
   hs-source-dirs:  src
