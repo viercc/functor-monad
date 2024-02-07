@@ -96,6 +96,15 @@ instance FMonad (ReaderT r) where
 
 There are packages with very similar type classes, but they are more or less different to this package.
 
+* From [hkd](https://hackage.haskell.org/package/hkd): `FFunctor`
+  
+  There is a class named `FFunctor` in `hkd` package too. It represents a functor from /category of type constructors/ `k -> Type` to
+  the category of usual types and functions.
+
+  Since it is not an endofunctor, there can be no `Monad`-like classes on them.
+
+  Another package [rank2classes](https://hackage.haskell.org/package/rank2classes) also provides the same class `Rank2.Functor`.
+  
 * From [mmorph](https://hackage.haskell.org/package/mmorph-1.2.0): `MFunctor`, `MMonad`
 
   They are endofunctors on the category of `Monad` and monad homomorphisms. 
