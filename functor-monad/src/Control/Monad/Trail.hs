@@ -16,13 +16,13 @@ import FMonad
 --
 -- @Trail mm@ can become variantions of @Monad@ for different @FMonad mm@.
 --
--- * @mm = 'FMonad.Compose.ComposePost' m@
+-- * @mm = 'Data.Functor.Compose.Compose' m@
 --
---     For any @Monad m@, @Trail (ComposePost m)@ is isomorphic to @m@.
+--     For any @Monad m@, @Trail (Compose m)@ is isomorphic to @m@.
 --
 --     @
---     Trail (ComposePost m) a
---       ~ ComposePost m ((,) a) ()
+--     Trail (Compose m) a
+--       ~ Compose m ((,) a) ()
 --       ~ m (a, ())
 --       ~ m a
 --     @

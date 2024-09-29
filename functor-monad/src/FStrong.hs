@@ -70,7 +70,7 @@ class FFunctor ff => FStrong ff where
   -- >            v                           fstrength                               |
   -- >  ff g ⊗ (h ⊗ k) --------------------------------------------------->  ff (g ⊗ (h ⊗ k))
   --
-  -- For readability, an infix operator @(⊗) was used instead of the type constructor @Day@.
+  -- For readability, an infix operator @(⊗)@ was used instead of the type constructor @Day@.
   fstrength :: (Functor g) => Day (ff g) h ~> ff (Day g h)
   fstrength (Day ffg h op) =
     runCurried (mapCurried (unapplied h)) (fmap op ffg)
