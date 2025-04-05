@@ -1,5 +1,6 @@
 packages:
     ./functor-monad/*.cabal
+    ./functor-monad-test/*.cabal
     ./free-applicative-t/*.cabal
     ./day-comonoid/*.cabal
 
