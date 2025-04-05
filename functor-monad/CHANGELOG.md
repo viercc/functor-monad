@@ -1,5 +1,7 @@
 # Revision history for functor-monad
 
+## 0.1.2.0 -- TBA
+
 ## 0.1.1.1 -- 2024-09-29
 
 * Add a module `TrailAsAdjunction` to the examples directory,

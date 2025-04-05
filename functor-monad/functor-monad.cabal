@@ -7,7 +7,7 @@ description:
 
   @FMonad@ is a type class for monads in the category of @Functor@s.
 
-version:             0.1.1.1
+version:             0.1.2.0
 license:             BSD-3-Clause
 license-file:        LICENSE
 author:              Koji Miyazato
