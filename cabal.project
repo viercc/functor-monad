@@ -2,6 +2,7 @@ packages:
     ./functor-monad/*.cabal
     ./free-applicative-t/*.cabal
     ./day-comonoid/*.cabal
+    ./cocomonad/*.cabal
 
 program-options
     ghc-options: -Werror
