@@ -62,16 +62,18 @@
 -- providing a @Category (Kleisli m)@ instance.
 --
 -- @
+-- -- The type of Kleisli category morphisms
 -- newtype Kleisli m a b = Kl { runKl :: a -> m b }
--- -- derive @Category (Kleisli m)@ from @Monad m@
+-- 
+-- -- Derive @Category (Kleisli m)@ from @Monad m@
 -- instance Monad m => Category (Kleisli m) where
 --   id :: Kleisli m a a
 --   id = Kl return
 --   (.) :: Kleisli m b c -> Kleisli m a b -> Kleisli m a c
 --   Kl f . Kl g = Kl (f <=< g)
 --
--- -- derive @Monad m@ from @Category (Kleisli m)@
--- --   (pseudocode, can't be real Haskell)
+-- -- Derive @Monad m@ from @Category (Kleisli m)@
+-- -- (pseudocode, can't be real Haskell)
 -- instance Category (Kleisli m) => Monad m where
 --   return = runKl id
 --   ma >>= k = runKl (Kl k . Kl (const ma)) ()
@@ -80,20 +82,18 @@
 -- @Kleisli (CoT f g)@ is isomorphic to the following @Arr f g@.
 --
 -- @
--- type Pair = (,)
--- type Arr f g a b = forall r. Pair a (f r) -> g (Pair b r)
+-- type Arr f g a b = forall r. (a, f r) -> g (b, r)
 -- @
 -- 
 -- Here's the transformations showing the isomorphism between @Kleisli (CoT f g)@ and @Arr f g@.
 -- 
 -- @
 -- Kleisli (CoT f g) a b
---  ~ a -> CoT f g b
---  ~ a -> ∀r. f r -> g (b, r)
---  ~ ∀r. a -> f r -> g (b, r)
---  ~ ∀r. (a, f r) -> g (b, r)
---  = ∀r. Pair a (f r) -> g (Pair b r)
---  = Arr f g a b
+--  ≅ a -> CoT f g b
+--  ≅ a -> ∀r. f r -> g (b, r)
+--  ≅ ∀r. a -> f r -> g (b, r)
+--  ≅ ∀r. (a, f r) -> g (b, r)
+--  ~ Arr f g a b
 -- @
 -- 
 -- @Arr f g@ can be made into @Category@ with the following identity and composition.
@@ -108,15 +108,24 @@
 --   abArr (a, duplicate fr) >>= bcArr
 -- @
 -- 
--- Diagramatically:
+-- Diagramatically, @idArr@ is the following composite
+-- 
+-- \[
+-- \require{AMScd}
+-- \begin{CD}
+-- (a, \_) \circ f @>>{\mathtt{fmap extract}}> (a, \_) @>>{\mathtt{pure}}> g \circ (a, \_)
+-- \end{CD}
+-- \]
 -- 
 -- > idArr :=
 -- >               fmap extract           pure
--- >    Pair a ∘ f --------------> Pair a ------> g ∘ Pair a
--- >
+-- >    (a, _) ∘ f --------------> (a, _) ------> g ∘ (a, _)
+--
+-- and @compArr@ is the following composite. 
+--
 -- > compArr ab bc :=
 -- >               fmap duplicate                   ab                   fmap bc                   join
--- >   Pair a ∘ f ----------------> Pair a ∘ f ∘ f ----> g ∘ Pair b ∘ f ---------> g ∘ g ∘ Pair c ------> g ∘ Pair c
+-- >   (a, _) ∘ f ----------------> (a, _) ∘ f ∘ f ----> g ∘ (b, _) ∘ f ---------> g ∘ g ∘ (c, _) ------> g ∘ (c, _)
 -- 
 -- Proving category laws for @(idArr, compArr)@ will be simple enough.
 module Control.Monad.CoComonad(
@@ -144,11 +153,14 @@ module Control.Monad.CoComonad(
   co, runCo,
   generalize,
   
-  -- | The other @Control.Monad.Co.Co@ monad (in @Control.Monad.Co@ module)
-  --   is isomorphic to 'Co' defined here.
+  -- ** Conversion
   --
-  --   @Control.Monad.Co.CoT@ is a kind of @Codensity@ monad with access to some @Comonad@ context,
-  --   thus the name.
+  -- The other @Control.Monad.Co.Co@ monad (in @Control.Monad.Co@ module)
+  -- is isomorphic to 'Co' defined here.
+  --
+  -- @Control.Monad.Co.CoT@ is a kind of @Codensity@ monad with access to some @Comonad@ context,
+  -- thus the name.
+  
   toCodensityCo,
   fromCodensityCo,
 ) where
@@ -186,7 +198,7 @@ newtype CoT f g a = CoT { runCoT :: forall r. f r -> g (a, r) }
 toCurried :: Functor g => CoT f g ~> Curried f g
 toCurried ta = Curried $ \far -> uncurry (&) <$> runCoT ta far
 
--- | @CoT f g@ is, as mere @Functor@, isomorphic to @'Curried' f g@.
+-- | The inverse of 'toCurried'
 fromCurried :: Functor f => Curried f g ~> CoT f g
 fromCurried ca = CoT $ \fr -> runCurried ca (flip (,) <$> fr)
 
@@ -218,14 +230,29 @@ instance (Comonad f, MonadIO g) => MonadIO (CoT f g) where
 contrahoist :: (forall x. f x -> k x) -> CoT k g a -> CoT f g a
 contrahoist fk (CoT kg) = CoT (kg . fk)
 
+-- | When the context @f@ can be constructed as @pure x : f a@,
+--   @CoT f@ can be removed by supplying the \"pure\" context.
+-- 
+--   There are two notable special cases of 'elimCoT':
+--
+--   @
+--   -- If the context f is Identity comonad, 'elimCoT' is monad isomorphism and
+--   -- is the inverse of @lift@.
+--   elimCoT :: (Functor g) => CoT 'Identity' g ~> g
+--   @
+--
+--   @
+--   -- If the context f is NonEmpty comonad, 'elimCoT' is monad morphism,
+--   -- and @elimCoT . lift = id@ holds.
+--   elimCoT :: (Functor g) => CoT 'Data.List.NonEmpty.NonEmpty' g ~> g
+--   @
 elimCoT :: (Applicative f, Functor g) => CoT f g ~> g
 elimCoT ig = fst <$> runCoT ig (pure ())
 
 -- | Nesting of @CoT f1@ and @CoT f2@ can be represented as a single @CoT (Day f1 f2)@ using 
 --   'Day' to combine two comonads.
 --
--- This is also a /monad isomorphism/. Not only it is an isomorphism,
--- it also keeps its @Monad@ operations @'pure'@ and @('>>=')@.
+-- This is also a /monad isomorphism/.
 uncurryCoT :: (Functor g) => CoT f1 (CoT f2 g) ~> CoT (Day f1 f2) g
 uncurryCoT tt = CoT $ \(Day f1b f2c op) ->
   (\((a,b),c) -> (a, op b c)) <$> (tt `runCoT` f1b) `runCoT` f2c
@@ -268,7 +295,7 @@ stating st = fromStateT (State.state st)
 
 -- * Sum and Product
 
--- | Product of @CoT@ to the same monad is @CoT@ from sum of comonads.
+-- | Product of @CoT@ into the same monad is @CoT@ from the sum of comonads.
 --
 -- Compare it with 'either' function:
 -- 
