@@ -104,8 +104,8 @@
 -- idArr (a, fr) = pure (a, extract fr)
 --
 -- compArr :: (Comonad f, Monad g) => Arr f g a b -> Arr f g b c -> Arr f g a c
--- compArr abArr bcArr (a, fr) =
---   abArr (a, duplicate fr) >>= bcArr
+-- compArr t u (a, fr) =
+--   t (a, duplicate fr) >>= u
 -- @
 -- 
 -- Diagramatically, @idArr@ is the following composite
@@ -113,19 +113,26 @@
 -- \[
 -- \require{AMScd}
 -- \begin{CD}
--- (a, \_) \circ f @>>{\mathtt{fmap extract}}> (a, \_) @>>{\mathtt{pure}}> g \circ (a, \_)
+-- (a, \_) \circ f @>>{\mathop{\mathtt{fmap}} \mathop{\mathtt{extract}}}> (a, \_) @>>{\mathtt{pure}}> g \circ (a, \_)
 -- \end{CD}
 -- \]
+--
+-- and @compArr t u@ is the following composite. 
 -- 
--- > idArr :=
--- >               fmap extract           pure
--- >    (a, _) ∘ f --------------> (a, _) ------> g ∘ (a, _)
---
--- and @compArr@ is the following composite. 
---
--- > compArr ab bc :=
--- >               fmap duplicate                   ab                   fmap bc                   join
--- >   (a, _) ∘ f ----------------> (a, _) ∘ f ∘ f ----> g ∘ (b, _) ∘ f ---------> g ∘ g ∘ (c, _) ------> g ∘ (c, _)
+-- \[
+-- \require{AMScd}
+-- \begin{CD}
+-- (a, \_) \circ f
+--   @>>{\mathop{\mathtt{fmap}} \mathop{\mathtt{duplicate}}}>
+-- (a, \_) \circ f \circ f
+--   @>>{t}>
+-- g \circ (b, \_) \circ f
+--   @>>{\mathop{\mathtt{fmap}} u}>
+-- g \circ g \circ (c, \_)
+--   @>>{\mathop{\mathtt{join}}}>
+-- g \circ (c, \_)
+-- \end{CD}
+-- \]
 -- 
 -- Proving category laws for @(idArr, compArr)@ will be simple enough.
 module Control.Monad.CoComonad(
