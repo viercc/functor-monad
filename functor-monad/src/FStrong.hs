@@ -112,13 +112,15 @@ class FFunctor ff => FStrong ff where
 fstrength' :: (FStrong ff, Functor h) => Day g (ff h) ~> ff (Day g h)
 fstrength' = ffmap swapped . fstrength . swapped
 
--- | Combine an applicative action(s) inside @ff@ to another action @h a@.
-innerAp :: (FStrong ff, Applicative h) => ff h (a -> b) -> h a -> ff h b
-innerAp ffh h = ffmap dap $ fstrength (day ffh h)
-
 -- | Cf. 'Control.Monad.ap'
 fap :: (FStrong mm, FMonad mm, Functor g, Functor h) => Day (mm g) (mm h) ~> mm (Day g h)
-fap = fjoin . ffmap fstrength' . fstrength
+fap = fbind fstrength' . fstrength
+
+liftA2Default :: (FStrong mm, FMonad mm, Applicative g) => (a -> b -> c) -> mm g a -> mm g b -> mm g c
+liftA2Default op ma mb = fbind (ffmap dap . fstrength') . fstrength $ Day ma mb op
+
+pureDefault :: (FMonad mm, Applicative g) => a -> mm g a
+pureDefault = fpure . pure
 
 instance FStrong IdentityT where
   fstrength = coerce

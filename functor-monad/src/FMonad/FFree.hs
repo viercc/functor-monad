@@ -11,7 +11,7 @@
 -- | Free 'FMonad'
 module FMonad.FFree where
 
-import Data.Functor.Day (Day (..), day, dap)
+import Data.Functor.Day (Day (..))
 import FFunctor
 import FMonad
 import FStrong
@@ -73,9 +73,8 @@ retract :: (FMonad ff, Functor g) => FFree ff g ~> ff g
 retract = foldFFree id
 
 instance (FStrong ff, Applicative g) => Applicative (FFree ff g) where
-  pure = FPure . pure
-  FPure gx <*> y = ffmap dap $ fstrength' (day gx y)
-  FFree ffr <*> y = FFree $ innerAp ffr y
+  pure = pureDefault
+  liftA2 = liftA2Default
 
 -- | Lift a single layer of @ff@ into @FFree ff@
 liftF :: (FFunctor ff, Functor g) => ff g ~> FFree ff g
