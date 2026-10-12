@@ -7,7 +7,7 @@ description:
 
   @FMonad@ is a type class for monads in the category of @Functor@s.
 
-version:             0.1.2.0
+version:             0.1.3.0
 license:             BSD-3-Clause
 license-file:        LICENSE
 author:              Koji Miyazato
@@ -40,6 +40,7 @@ library
     FMonad.Cont.Exp,
 
     FStrong,
+    FStrong.Monad,
     
     FComonad,
     FComonad.Adjoint,
@@ -73,7 +74,7 @@ test-suite functor-monad-examples
   type:               exitcode-stdio-1.0
   hs-source-dirs:     examples
   main-is:            ListTVia.hs
-  other-modules:      TrailAsAdjunction
+  other-modules:      TrailAsAdjunction, FStrongNonUniqueness
   build-depends:      base, transformers, free, kan-extensions, comonad, functor-monad
   ghc-options:        -Wall -Wwarn=unused-packages
   default-language:   Haskell2010

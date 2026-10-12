@@ -15,6 +15,7 @@ import Data.Functor.Day (Day (..))
 import FFunctor
 import FMonad
 import FStrong
+import FStrong.Monad
 
 -- | The free 'FMonad' for a @'FFunctor' ff@.  
 data FFree ff g x = FPure (g x) | FFree (ff (FFree ff g) x)
@@ -44,6 +45,8 @@ instance (FStrong ff) => FStrong (FFree ff) where
   fstrength (Day ffg h op) = case ffg of
     FPure g -> FPure (Day g h op)
     FFree ffr -> FFree (ffmap fstrength $ fstrength (Day ffr h op))
+
+instance (FStrong ff) => FStrongMonad (FFree ff)
 
 fffmap :: forall ff gg h.
      (FFunctor ff, FFunctor gg, Functor h)
