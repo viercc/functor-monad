@@ -25,7 +25,7 @@ import Control.Comonad.Store (StoreT (..))
 
 -- | 'FFunctor' with tensorial strength with respect to 'Day'.
 class FFunctor ff => FStrong ff where
-  {-# MINIMAL fstrength | mapCurried #-}
+  {-# MINIMAL fstrength | fstrengthR | mapCurried #-}
 
   -- | Tensorial strength with respect to 'Day'.
   --
@@ -74,6 +74,39 @@ class FFunctor ff => FStrong ff where
   fstrength (Day ffg h op) =
     runCurried (mapCurried (unapplied h)) (fmap op ffg)
 
+  -- | 'fstrength' but restricted to functions `(->) a`.
+  --
+  -- The type of 'fstrengthR' does not use `Day` using natural isomorphism between
+  -- `Day f ((->) a) r` and `Precompose ((->) f) ≅ f (a -> r)`.
+  -- 
+  -- ==== Laws
+  -- 
+  -- 'fstrengthR' must satisfy the equations 'fstrength' satisfies,
+  -- under isomorphism converting the type to that of @fstrength@
+  -- restriceted to functions:
+  -- 
+  -- > fstrengthFn = ffmap (fnToDay . getPrecompose) . fstrengthR . dayToFn
+  -- >   :: Day (ff g) ((->) a) ~> ff (Day g ((->) a))
+  --
+  -- where
+  --
+  -- > dayToFn :: (Functor f) => Day f ((->) b) r -> f (b -> r)
+  -- > fnToDay :: (Functor f) => f (b -> r) -> Day f ((->) b) r
+  --
+  -- ==== Relation to other methods
+  -- 
+  -- 'fstrengthR' must be equivalent to 'fstrength' under @dayToFn, fnToDay@ isomorphisms.
+  -- 
+  -- > fstrengthR = ffmap (Precompose . dayToFn) . fstrength . fnToDay
+  fstrengthR :: (Functor g) => ff g (a -> x) -> ff (Precompose ((->) a) g) x
+  fstrengthR = ffmap (Precompose . dayToFn) . fstrength . fnToDay
+    where
+      dayToFn :: forall f b r. (Functor f) => Day f ((->) b) r -> f (b -> r)
+      dayToFn (Day f bc op) = (\a b -> op a (bc b)) <$> f
+
+      fnToDay :: forall f b r. (Functor f) => f (b -> r) -> Day f ((->) b) r
+      fnToDay fbr = Day fbr id id
+
   -- | Internal 'ffmap'.
   --
   -- 'mapCurried' can be seen as @ffmap@ but by using "internal language" of
@@ -91,8 +124,7 @@ class FFunctor ff => FStrong ff where
   -- On the other hand, @mapCurried@ is a natural transformation @(~>)@ between @Curried _ _@,
   -- objects of \(\mathrm{Hask}^{\mathrm{Hask}}\).
   -- 
-  -- The existence of 'mapCurried' is known to be equivalent to the existence of
-  -- 'fstrength'.
+  -- It is known that the set of all (lawful) 'mapCurried' has bijection to the set of all (lawful) 'fstrength'.
   --
   -- ==== Laws
   --
@@ -104,15 +136,24 @@ class FFunctor ff => FStrong ff where
   -- mapCurried . 'Data.Functor.Day.Extra.composeCurried' = 'Data.Functor.Day.Extra.composeCurried' . trans1 mapCurried . trans2 mapCurried
   --     :: Day (Curried g h) (Curried h k) ~> Curried (ff g) (ff k)
   -- @
+  --
+  -- ==== Relation to other methods
+  -- 
+  -- 'mapCurried' must be equivalent to the follwing default implementation,
+  -- implemented using 'fstrengthR'.
+  -- 
+  -- > mapCurried gh = Curried $ \ffg -> ffmap (runCurried gh . getPrecompose) (fstrengthR ffg)
   mapCurried :: (Functor g, Functor h) => Curried g h ~> Curried (ff g) (ff h)
-  mapCurried gh = Curried $ \ffg -> ffmap applied (fstrength (day ffg gh))
+  mapCurried gh = Curried $ \ffg -> ffmap (runCurried gh . getPrecompose) (fstrengthR ffg)
 
-  -- | 'fstrength' but from left.
+  -- | 'fstrength' but from left. 'fstrength'' must be observationally equivalent to
+  --   the following default implementation.
   --
   -- > fstrength' = ffmap swapped . fstrength . swapped
+  --
+  -- It is included for the optimization opportunity.
   fstrength' :: (Functor h) => Day g (ff h) ~> ff (Day g h)
   fstrength' = ffmap swapped . fstrength . swapped
-
 
 instance FStrong IdentityT where
   fstrength = coerce
