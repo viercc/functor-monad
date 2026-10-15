@@ -22,8 +22,12 @@ import Control.Monad.Trans.Reader
 import Data.Tuple (swap)
 import Data.Coerce (coerce)
 
+import Data.Functor.Day (trans1)
+
 import FMonad
 import FMonad.Adjoint
+import FStrong
+import FStrong.Monad (FStrongMonad)
 
 newtype StateT s0 mm x a = StateT { runStateT :: s0 -> mm (EnvT s0 x) a }
    deriving (FFunctor, FMonad) via (AdjointT (EnvT s0) (ReaderT s0) mm)
@@ -31,6 +35,11 @@ type State s0 = StateT s0 IdentityT
 
 deriving
   stock instance (FFunctor mm, Functor x) => Functor (StateT s0 mm x)
+
+instance (FStrong mm) => FStrong (StateT s0 mm) where
+  fstrength = fromAdjointT . fstrength . trans1 toAdjointT
+
+instance (FStrongMonad mm) => FStrongMonad (StateT s0 mm)
 
 fromAdjointT :: AdjointT (EnvT s0) (ReaderT s0) mm x ~> StateT s0 mm x
 fromAdjointT =  coerce

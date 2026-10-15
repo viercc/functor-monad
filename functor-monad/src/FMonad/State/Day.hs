@@ -16,7 +16,7 @@ module FMonad.State.Day
 ) where
 
 import Control.Monad.Trans.Identity
-import Data.Functor.Day ( Day(..), day )
+import Data.Functor.Day ( Day(..), day, trans1 )
 import Data.Functor.Day.Curried ( Curried(Curried) )
 import Data.Functor.Day.Comonoid
 
@@ -31,10 +31,16 @@ import Data.Functor.Day.Extra
 import Data.Coerce (coerce)
 import Data.Functor.Identity
 import Data.Function ((&))
+import FStrong.Monad (FStrongMonad)
 
 newtype StateT s mm x a = StateT { runStateT :: forall r. s (a -> r) -> mm (Day s x) r }
    deriving stock Functor
    deriving (FFunctor, FMonad) via (AdjointT (Day s) (Curried s) mm)
+
+instance (Functor s, FStrong mm) => FStrong (StateT s mm) where
+  fstrength = fromAdjointT . fstrength . trans1 toAdjointT
+
+instance (Functor s, FStrongMonad mm) => FStrongMonad (StateT s mm)
 
 toAdjointT :: StateT s mm x ~> AdjointT (Day s) (Curried s) mm x
 toAdjointT = coerce
