@@ -75,9 +75,6 @@ class FFunctor ff => FStrong ff where
     runCurried (mapCurried (unapplied h)) (fmap op ffg)
 
   -- | 'fstrength' but restricted to functions `(->) a`.
-  --
-  -- The type of 'fstrengthR' does not use `Day` using natural isomorphism between
-  -- `Day f ((->) a) r` and `Precompose ((->) f) ≅ f (a -> r)`.
   -- 
   -- ==== Laws
   -- 

@@ -121,7 +121,7 @@ assocStamp' = Stamp . fmap (\((x,a),b) -> (x,(a,b))) . unStamp . unStamp
 --     @
 --     'hop' . 'fjoin'
 --       = ffmap fjoin . hop . ffmap hop
---         :: ff (ff (Stamp a h)) ~> Stamp a (ff (ff h)) 
+--         :: ff (ff (Stamp a h)) ~> Stamp a (ff h) 
 --     @
 
 class (FFunctor ff) => Hop ff where
@@ -192,7 +192,7 @@ instance FFunctor Par where
 --   implement 'hop' for @Par@ is
 --
 -- @
--- hop' :: forall a r. r -> (a, r)
+-- hop' :: forall a r. r -> (r, a)
 -- @
 --
 -- which is impossible to implement without using an 'undefined' value,
@@ -232,14 +232,14 @@ instance Hop (Poke S1) where
 
 hopPoke1 :: forall a h r. Functor h
     => Poke S1 (Stamp a h) r -> Stamp a (Poke S1 h) r
----- ≅ ((r -> S1) -> h (S1,a)) -> ((a,r) -> S1) -> h S1
+---- ≅ ((r -> S1) -> h (S1,a)) -> ((r,a) -> S1) -> h S1
 ---    ^^^^^^^^^^^^^^^^^^^^^^^    ^^^^^^^^^^^^^
 ---    | poke p              |    | k         |
 hopPoke1 p = Stamp $ Poke $ \_ -> S1 <$ unStamp (poke p (const S1))
 
 hopPoke2Violating :: forall a h r. Functor h
     => Poke S2 (Stamp a h) r -> Stamp a (Poke S2 h) r
----- ≅ ((r -> S2) -> h (S2,a)) -> ((a,r) -> S2) -> h S2
+---- ≅ ((r -> S2) -> h (S2,a)) -> ((r,a) -> S2) -> h S2
 ---    ^^^^^^^^^^^^^^^^^^^^^^^    ^^^^^^^^^^^^^
 ---    | poke p              |    | k         |
 hopPoke2Violating p = Stamp $ Poke $ \k -> {- ??? -}
@@ -290,7 +290,7 @@ hopPoke2Violating p = Stamp $ Poke $ \k -> {- ??? -}
 
 {-
 
-@hop = hopS2Violating@ breaks @Hop@ law, regardless of how @s2@ and @g@ are chosen.
+@hop = hopS2Violating@ breaks the @Hop@ law, regardless of how @s2@ and @g@ are chosen.
 In fact, it does not satisfy the unit law
 
     hop . ffmap unitStamp' = unitStamp'
@@ -307,22 +307,22 @@ and evaluate both sides of the unit law on @x@.
     = Stamp $ fmap ((),) x
     = Stamp $ Poke $ \k -> Identity (k ((),()))
 
-    (Lhs) = hop . ffmap unitStamp'
+    (LHS) = hop . ffmap unitStamp'
     = hop $ Poke $ \k -> Stamp (Identity (k (), ()))
     = Stamp $ Poke $ \k ->
         post k <$> Identity (pre k (), ())
-    = Stamp $ Poke $ \k -> Identity (g s1)
+    = Stamp $ Poke $ \k -> Identity (g s2)
 
 Unwrapping newtypes and equality of function,
 
-    g s1 = k ((), ())
+    g s2 = k ((), ())
 
 must hold for all @k :: ((), ()) -> S2@. But this is impossible,
 because RHS can take two distinct values @S2 False, S2 True@
 depending on @k@, while LHS is a constant determined by choice of @g@ and @s1@.
 
 By the same argument, if any lawful @hop@ for @Poke S@ existed,
-any value of @S@ must be equal to @g s1 :: S@ determined by @hop@.
+any value of @S@ must be equal to @g s :: S@ determined by @hop@.
 Therefore, such @S@ must be isomorphic to the unit type @()@.
 -}
 
@@ -393,7 +393,7 @@ hopSecond :: Functor h => Free1 (Stamp a h) ~> Stamp a (Free1 h)
 hopSecond (Lift sh) = Stamp . Lift . unStamp $ sh
 hopSecond (Wrap1 shmx) = Stamp . Wrap1 $ unStamp shmx <&> \(mx,_) -> unStamp (hopFirst mx)
 
--- | Generalization to 'hopSecond' to infinite families of distinct @Hop@ instances.
+-- | Generalization of 'hopSecond' to infinite families of distinct @Hop@ instances.
 hopNth :: Functor h => Int -> (Free1 (Stamp a h) ~> Stamp a (Free1 h))
 hopNth n
   | n <= 0 = error ("Non-positive n:" ++ show n)
